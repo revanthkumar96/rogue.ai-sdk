@@ -65,14 +65,7 @@ def connect_fastapi(app: FastAPI) -> None:
             span.set_attribute("service.name", config.service_name)
             span.set_attribute("telemetry.sdk.language", "python")
 
-            # TODO (revanth_kumar): This is might be the same as the information in
-            # server_request_hook. Let's check and deprecate it as necessary.
-            path = scope.get('path', '')
-            method = scope.get('method', '')
-            if path:
-                span.set_attribute("http.path", path)
-            if method:
-                span.set_attribute("http.method", method)
+            # Removed redundant path and method extraction as it's handled in server_request_hook
 
             if message:
                 status_code = message.get('status', '')
