@@ -1,0 +1,6 @@
+token: "rouge-*"
+service_name: "sdk-python-example-service"
+github_owner: "rouge-ai"
+github_repo_name: "rouge-sdk"
+github_commit_hash: "main"
+enable_log_console_export: true

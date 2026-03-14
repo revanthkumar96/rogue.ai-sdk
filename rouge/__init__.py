@@ -1,0 +1,13 @@
+from rouge.logger import get_logger
+from rouge.tracer import init, shutdown, trace
+
+__version__ = '0.0.7'
+
+init()
+
+__all__ = [
+    'init',
+    'trace',
+    'get_logger',
+    'shutdown',
+]

@@ -1,0 +1,281 @@
+import unittest
+from unittest.mock import MagicMock, patch
+
+from rouge.config import RougeConfig
+from rouge.credentials import CredentialManager
+from rouge.logger import RougeLogger
+
+
+class TestLogger(unittest.TestCase):
+
+    def setUp(self):
+        """Reset global state before each test"""
+        import rouge.logger as logger_module
+        import rouge.tracer as tracer_module
+
+        # Clean up tracer state first
+        if tracer_module._tracer_provider:
+            tracer_module._tracer_provider.shutdown()
+        tracer_module._tracer_provider = None
+        tracer_module._config = None
+
+        # Clean up logger state
+        if logger_module._global_logger:
+            # Remove all handlers from existing logger
+            for handler in logger_module._global_logger.logger.handlers[:]:
+                logger_module._global_logger.logger.removeHandler(handler)
+                if hasattr(handler, 'close'):
+                    handler.close()
+        logger_module._global_logger = None
+        logger_module._cloudwatch_handler = None
+
+    def tearDown(self):
+        """Clean up after each test"""
+        import rouge.logger as logger_module
+        import rouge.tracer as tracer_module
+
+        # Clean up tracer state
+        if tracer_module._tracer_provider:
+            tracer_module._tracer_provider.shutdown()
+        tracer_module._tracer_provider = None
+        tracer_module._config = None
+
+        # Clean up logger state
+        if logger_module._global_logger:
+            # Remove all handlers from existing logger
+            for handler in logger_module._global_logger.logger.handlers[:]:
+                logger_module._global_logger.logger.removeHandler(handler)
+                if hasattr(handler, 'close'):
+                    handler.close()
+        logger_module._global_logger = None
+        logger_module._cloudwatch_handler = None
+
+    @patch('rouge.logger.watchtower.CloudWatchLogHandler')
+    @patch('boto3.Session')
+    def test_both_span_and_log_cloud_export_enabled(self, mock_boto_session,
+                                                    mock_cloudwatch_handler):
+        """Test that CloudWatch handler is created when
+        both span and log cloud export are enabled
+        """
+        # Mock AWS session
+        mock_session_instance = MagicMock()
+        mock_boto_session.return_value = mock_session_instance
+
+        # Mock CloudWatch handler
+        mock_handler_instance = MagicMock()
+        mock_cloudwatch_handler.return_value = mock_handler_instance
+
+        config = RougeConfig(service_name="test-service",
+                                 github_owner="test-owner",
+                                 github_repo_name="test-repo",
+                                 github_commit_hash="test-hash",
+                                 enable_span_cloud_export=True,
+                                 enable_log_cloud_export=True,
+                                 local_mode=False)
+
+        with patch.object(CredentialManager,
+                          'get_credentials',
+                          return_value=None):
+            logger = RougeLogger(config)
+
+        # Verify CloudWatch handler was created and added
+        mock_cloudwatch_handler.assert_called_once()
+        # Verify the handler was added to the logger
+        self.assertIn(mock_handler_instance, logger.logger.handlers)
+
+    def test_both_span_and_log_cloud_export_disabled(self):
+        """Test that no CloudWatch handler is created when
+        both span and log cloud export are disabled
+        """
+        config = RougeConfig(service_name="test-service",
+                                 github_owner="test-owner",
+                                 github_repo_name="test-repo",
+                                 github_commit_hash="test-hash",
+                                 enable_span_cloud_export=False,
+                                 enable_log_cloud_export=False,
+                                 local_mode=False)
+
+        with patch.object(RougeLogger,
+                          '_setup_otlp_logging_handler') as mock_otlp:
+            logger = RougeLogger(config)
+
+        # Should setup OTLP handler instead of CloudWatch
+        mock_otlp.assert_called_once()
+
+        # Should not have any CloudWatch handlers
+        cloudwatch_handlers = [
+            h for h in logger.logger.handlers
+            if 'CloudWatchLogHandler' in str(type(h))
+        ]
+        self.assertEqual(len(cloudwatch_handlers), 0)
+
+    @patch('rouge.logger.watchtower.CloudWatchLogHandler')
+    @patch('boto3.Session')
+    def test_span_enabled_log_disabled(self, mock_boto_session,
+                                       mock_cloudwatch_handler):
+        """Test that credentials are fetched but no CloudWatch
+        handler is created when span is enabled but log is disabled
+        """
+        # Mock AWS session
+        mock_session_instance = MagicMock()
+        mock_boto_session.return_value = mock_session_instance
+
+        config = RougeConfig(service_name="test-service",
+                                 github_owner="test-owner",
+                                 github_repo_name="test-repo",
+                                 github_commit_hash="test-hash",
+                                 enable_span_cloud_export=True,
+                                 enable_log_cloud_export=False,
+                                 local_mode=False)
+
+        with patch.object(CredentialManager,
+                          'get_credentials',
+                          return_value=None) as mock_get_creds:
+            logger = RougeLogger(config)
+
+        # Credentials should be fetched (needed for tracer endpoint)
+        # Note: May be called once during setup
+        self.assertGreaterEqual(mock_get_creds.call_count, 1)
+
+        # CloudWatch handler should NOT be created (log export disabled)
+        mock_cloudwatch_handler.assert_not_called()
+
+        # Should not have any CloudWatch handlers
+        cloudwatch_handlers = [
+            h for h in logger.logger.handlers
+            if 'CloudWatchLogHandler' in str(type(h))
+        ]
+        self.assertEqual(len(cloudwatch_handlers), 0)
+
+    def test_span_disabled_log_enabled(self):
+        """Test that when span cloud export is disabled, no
+        cloud operations occur regardless of log setting
+        """
+        config = RougeConfig(
+            service_name="test-service",
+            github_owner="test-owner",
+            github_repo_name="test-repo",
+            github_commit_hash="test-hash",
+            enable_span_cloud_export=False,
+            enable_log_cloud_export=True,  # This should be ignored
+            local_mode=False)
+
+        with patch.object(CredentialManager,
+                          'get_credentials') as mock_get_creds:
+            with patch.object(RougeLogger,
+                              '_setup_otlp_logging_handler') as mock_otlp:
+                logger = RougeLogger(config)
+
+        # No credentials should be fetched when span cloud export is disabled
+        mock_get_creds.assert_not_called()
+
+        # Should setup OTLP handler instead
+        mock_otlp.assert_called_once()
+
+        # Should not have any CloudWatch handlers
+        cloudwatch_handlers = [
+            h for h in logger.logger.handlers
+            if 'CloudWatchLogHandler' in str(type(h))
+        ]
+        self.assertEqual(len(cloudwatch_handlers), 0)
+
+    def test_local_mode_overrides_cloud_settings(self):
+        """Test that local_mode=True overrides cloud export settings"""
+        config = RougeConfig(
+            service_name="test-service",
+            github_owner="test-owner",
+            github_repo_name="test-repo",
+            github_commit_hash="test-hash",
+            enable_span_cloud_export=True,
+            enable_log_cloud_export=True,
+            local_mode=True  # This should override cloud settings
+        )
+
+        with patch.object(CredentialManager,
+                          'get_credentials') as mock_get_creds:
+            with patch.object(RougeLogger,
+                              '_setup_otlp_logging_handler') as mock_otlp:
+                RougeLogger(config)
+
+        # No credentials should be fetched in local mode
+        mock_get_creds.assert_not_called()
+
+        # Should setup OTLP handler in local mode
+        mock_otlp.assert_called_once()
+
+    @patch('rouge.logger.watchtower.CloudWatchLogHandler')
+    @patch('boto3.Session')
+    def test_credential_refresh_logic(self, mock_boto_session,
+                                      mock_cloudwatch_handler):
+        """Test credential refresh behavior based on export settings"""
+        # Mock successful credentials
+        mock_credentials = {
+            'aws_access_key_id': 'test-key',
+            'aws_secret_access_key': 'test-secret',
+            'aws_session_token': 'test-token',
+            'region': 'us-east-1',
+            'hash': 'test-hash',
+            'otlp_endpoint': 'http://test-endpoint'
+        }
+
+        config = RougeConfig(service_name="test-service",
+                                 github_owner="test-owner",
+                                 github_repo_name="test-repo",
+                                 github_commit_hash="test-hash",
+                                 enable_span_cloud_export=True,
+                                 enable_log_cloud_export=True,
+                                 local_mode=False)
+
+        with patch.object(CredentialManager,
+                          'get_credentials',
+                          return_value=mock_credentials) as mock_get_creds:
+            logger = RougeLogger(config)
+            initial_call_count = mock_get_creds.call_count
+
+            # Test that credential refresh works when span
+            # cloud export is enabled
+            result = logger.refresh_credentials()
+            # Should return True and have made at
+            # least one additional call for refresh
+            self.assertTrue(result)
+            self.assertGreater(mock_get_creds.call_count, initial_call_count)
+
+            # Test that credential refresh is disabled when
+            # span cloud export is disabled
+            logger.config.enable_span_cloud_export = False
+            result = logger.refresh_credentials()
+            # Should return False when disabled
+            self.assertFalse(result)
+
+    def test_check_and_refresh_credentials_logic(self):
+        """Test _check_and_refresh_credentials behavior
+        based on export settings
+        """
+        config = RougeConfig(service_name="test-service",
+                                 github_owner="test-owner",
+                                 github_repo_name="test-repo",
+                                 github_commit_hash="test-hash",
+                                 enable_span_cloud_export=True,
+                                 enable_log_cloud_export=True,
+                                 local_mode=False)
+
+        with patch.object(CredentialManager,
+                          'check_and_refresh_if_needed',
+                          return_value=False) as mock_check:
+            with patch.object(RougeLogger, '_setup_cloudwatch_handler'):
+                logger = RougeLogger(config)
+                mock_check.reset_mock()
+
+                # Should call check when span cloud export is enabled
+                logger._check_and_refresh_credentials()
+                mock_check.assert_called_once()
+
+                # Should not call check when span cloud export is disabled
+                logger.config.enable_span_cloud_export = False
+                mock_check.reset_mock()
+                logger._check_and_refresh_credentials()
+                mock_check.assert_not_called()
+
+
+if __name__ == '__main__':
+    unittest.main()
