@@ -6,16 +6,6 @@
   </a>
 </div>
 
-<div align="center">
-
-[![Testing Status][testing-image]][testing-url]
-[![Documentation][docs-image]][docs-url]
-[![PyPI Version][pypi-image]][pypi-url]
-[![PyPI SDK Downloads][pypi-sdk-downloads-image]][pypi-sdk-downloads-url]
-[![Rouge.AI Website](https://raw.githubusercontent.com/rouge-ai/rouge/refs/heads/main/misc/images/custom-website-badge.svg)][company-website-url]
-
-</div>
-
 Please see the [Python SDK Docs](https://docs.rouge.ai/sdk/python) for details.
 
 ## Installation
