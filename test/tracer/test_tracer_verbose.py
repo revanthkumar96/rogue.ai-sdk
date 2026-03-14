@@ -56,9 +56,8 @@ class TestTracerVerbose(unittest.TestCase):
 
             # Check that verbose initialization messages were printed
             output = captured_output.getvalue()
-            self.assertIn(
-                "[Rouge-Tracer] Initializing Rouge with config:",
-                output)
+            self.assertIn("[Rouge-Tracer] Initializing Rouge with config:",
+                          output)
             self.assertIn("tracer_verbose", output)
 
     def test_verbose_logging_disabled(self):
@@ -85,9 +84,8 @@ class TestTracerVerbose(unittest.TestCase):
 
             # Check that verbose initialization messages were NOT printed
             output = captured_output.getvalue()
-            self.assertNotIn(
-                "[Rouge-Tracer] Initializing Rouge with config:",
-                output)
+            self.assertNotIn("[Rouge-Tracer] Initializing Rouge with config:",
+                             output)
 
     def test_verbose_logging_with_trace_function(self):
         """Test that verbose logging works with the trace decorator"""
@@ -138,11 +136,10 @@ class TestTracerVerbose(unittest.TestCase):
 
             # Check that logger verbose initialization messages were printed
             output = captured_output.getvalue()
+            self.assertIn("[Rouge-Logger] Initializing Rouge logger...",
+                          output)
             self.assertIn(
-                "[Rouge-Logger] Initializing Rouge logger...", output)
-            self.assertIn(
-                "[Rouge-Logger] Setting up logger with service name:",
-                output)
+                "[Rouge-Logger] Setting up logger with service name:", output)
 
     def test_logger_verbose_disabled(self):
         """Test that logger verbose logging is suppressed when
@@ -169,11 +166,10 @@ class TestTracerVerbose(unittest.TestCase):
             # Check that logger verbose initialization messages were NOT
             # printed
             output = captured_output.getvalue()
+            self.assertNotIn("[Rouge-Logger] Initializing Rouge logger...",
+                             output)
             self.assertNotIn(
-                "[Rouge-Logger] Initializing Rouge logger...", output)
-            self.assertNotIn(
-                "[Rouge-Logger] Setting up logger with service name:",
-                output)
+                "[Rouge-Logger] Setting up logger with service name:", output)
 
     def test_both_verbose_enabled(self):
         """Test that both tracer_verbose and logger_verbose can be enabled
@@ -201,11 +197,10 @@ class TestTracerVerbose(unittest.TestCase):
 
             # Check that both tracer and logger verbose messages were printed
             output = captured_output.getvalue()
-            self.assertIn(
-                "[Rouge-Tracer] Initializing Rouge with config:",
-                output)
-            self.assertIn(
-                "[Rouge-Logger] Initializing Rouge logger...", output)
+            self.assertIn("[Rouge-Tracer] Initializing Rouge with config:",
+                          output)
+            self.assertIn("[Rouge-Logger] Initializing Rouge logger...",
+                          output)
             self.assertIn("tracer_verbose", output)
             self.assertIn("logger_verbose", output)
 
@@ -230,9 +225,8 @@ class TestTracerVerbose(unittest.TestCase):
 
             # Check that verbose initialization messages were NOT printed
             output = captured_output.getvalue()
-            self.assertNotIn(
-                "[Rouge-Tracer] Initializing Rouge with config:",
-                output)
+            self.assertNotIn("[Rouge-Tracer] Initializing Rouge with config:",
+                             output)
 
 
 if __name__ == '__main__':

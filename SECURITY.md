@@ -27,6 +27,4 @@ When reporting a vulnerability, please include the following information:
 
 Please **do not** report security vulnerabilities through public GitHub issues, discussions, or other public channels.
 
-
-
 Private GitHub reporting is always the preferred method for security vulnerabilities.

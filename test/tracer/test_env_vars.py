@@ -24,11 +24,10 @@ class TestEnvironmentVariables(unittest.TestCase):
     def _cleanup_env_vars(self):
         """Remove test environment variables"""
         env_vars = [
-            'ROUGE_TOKEN', 'ROUGE_SERVICE_NAME',
-            'ROUGE_ENVIRONMENT', 'ROUGE_LOCAL_MODE',
-            'ROUGE_ENABLE_SPAN_CONSOLE_EXPORT', 'ROUGE_AWS_REGION',
-            'ROUGE_ENABLE_LOG_CONSOLE_EXPORT', 'ROUGE_TRACER_VERBOSE',
-            'ROUGE_LOGGER_VERBOSE'
+            'ROUGE_TOKEN', 'ROUGE_SERVICE_NAME', 'ROUGE_ENVIRONMENT',
+            'ROUGE_LOCAL_MODE', 'ROUGE_ENABLE_SPAN_CONSOLE_EXPORT',
+            'ROUGE_AWS_REGION', 'ROUGE_ENABLE_LOG_CONSOLE_EXPORT',
+            'ROUGE_TRACER_VERBOSE', 'ROUGE_LOGGER_VERBOSE'
         ]
         for var in env_vars:
             if var in os.environ:

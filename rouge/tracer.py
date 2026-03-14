@@ -183,7 +183,7 @@ def init(**kwargs: Any) -> TracerProvider:
     global _credential_manager
     _credential_manager = CredentialManager(config)
 
-    # TODO(revanth_kumar): separate logger initialization from tracer initialization.
+    # TODO(revanth_kumar): separate logger and tracer initialization.
     # Initialize logger first
     tracer_verbose(config, "Initializing logger...")
     initialize_logger(config, _credential_manager)

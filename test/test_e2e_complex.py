@@ -20,8 +20,7 @@ from fastapi.testclient import TestClient
 import rouge
 from rouge.integrations.fastapi import connect_fastapi
 from rouge.logger import get_logger
-from rouge.tracer import (TraceOptions, trace,
-                              write_attributes_to_current_span)
+from rouge.tracer import TraceOptions, trace, write_attributes_to_current_span
 
 # Initialize tracing
 rouge.init(
@@ -238,9 +237,9 @@ async def run_complex_test():
 
 def test_complex_scenario():
     """Main test function that runs the complex scenario"""
-    # NOTE (revanth_kumar): This is to compare against the FastAPI endpoint tracing
-    # to verify that the tracing works because of the `connect_fastapi`
-    # function.
+    # NOTE (revanth_kumar): This is to compare against the FastAPI endpoint
+    # tracing to verify that the tracing works because of the
+    # `connect_fastapi` function.
 
     # Run the async test (tracing will not be triggered here)
     result = asyncio.run(run_complex_test())

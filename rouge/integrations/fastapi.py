@@ -32,8 +32,7 @@ def connect_fastapi(app: FastAPI) -> None:
     config = get_config()
 
     if provider is None:
-        raise RuntimeError(
-            "Tracing not initialized. Call rouge.init() first.")
+        raise RuntimeError("Tracing not initialized. Call rouge.init() first.")
 
     if config is None:
         raise RuntimeError("Configuration not available.")
@@ -65,7 +64,7 @@ def connect_fastapi(app: FastAPI) -> None:
             span.set_attribute("service.name", config.service_name)
             span.set_attribute("telemetry.sdk.language", "python")
 
-            # TODO (revanth_kumar): This is might be the same as the information in
+            # TODO (revanth_kumar): This might be the same as the info in
             # server_request_hook. Let's check and deprecate it as necessary.
             path = scope.get('path', '')
             method = scope.get('method', '')

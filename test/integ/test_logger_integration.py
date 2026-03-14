@@ -39,10 +39,10 @@ class TestLoggerWithRealSpans(unittest.TestCase):
 
         # Create config and filter
         self.config = RougeConfig(service_name="test-service",
-                                      github_owner="test-owner",
-                                      github_repo_name="test-repo",
-                                      github_commit_hash="test-hash",
-                                      environment="test")
+                                  github_owner="test-owner",
+                                  github_repo_name="test-repo",
+                                  github_commit_hash="test-hash",
+                                  environment="test")
         self.filter = TraceIdFilter(self.config)
 
     def tearDown(self):
@@ -251,10 +251,10 @@ class TestFormatterWithRealSpans(unittest.TestCase):
         self.tracer = trace.get_tracer(__name__)
 
         self.config = RougeConfig(service_name="test-service",
-                                      github_owner="test-owner",
-                                      github_repo_name="test-repo",
-                                      github_commit_hash="test-hash",
-                                      environment="test")
+                                  github_owner="test-owner",
+                                  github_repo_name="test-repo",
+                                  github_commit_hash="test-hash",
+                                  environment="test")
         self.filter = TraceIdFilter(self.config)
 
         # Create formatter matching the one in RougeLogger
@@ -372,10 +372,10 @@ class TestLoggerWithoutSpan(unittest.TestCase):
     def setUp(self):
         """Set up config and filter"""
         self.config = RougeConfig(service_name="test-service",
-                                      github_owner="test-owner",
-                                      github_repo_name="test-repo",
-                                      github_commit_hash="test-hash",
-                                      environment="test")
+                                  github_owner="test-owner",
+                                  github_repo_name="test-repo",
+                                  github_commit_hash="test-hash",
+                                  environment="test")
         self.filter = TraceIdFilter(self.config)
 
     def test_no_active_span(self):

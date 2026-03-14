@@ -66,12 +66,12 @@ class TestLogger(unittest.TestCase):
         mock_cloudwatch_handler.return_value = mock_handler_instance
 
         config = RougeConfig(service_name="test-service",
-                                 github_owner="test-owner",
-                                 github_repo_name="test-repo",
-                                 github_commit_hash="test-hash",
-                                 enable_span_cloud_export=True,
-                                 enable_log_cloud_export=True,
-                                 local_mode=False)
+                             github_owner="test-owner",
+                             github_repo_name="test-repo",
+                             github_commit_hash="test-hash",
+                             enable_span_cloud_export=True,
+                             enable_log_cloud_export=True,
+                             local_mode=False)
 
         with patch.object(CredentialManager,
                           'get_credentials',
@@ -88,12 +88,12 @@ class TestLogger(unittest.TestCase):
         both span and log cloud export are disabled
         """
         config = RougeConfig(service_name="test-service",
-                                 github_owner="test-owner",
-                                 github_repo_name="test-repo",
-                                 github_commit_hash="test-hash",
-                                 enable_span_cloud_export=False,
-                                 enable_log_cloud_export=False,
-                                 local_mode=False)
+                             github_owner="test-owner",
+                             github_repo_name="test-repo",
+                             github_commit_hash="test-hash",
+                             enable_span_cloud_export=False,
+                             enable_log_cloud_export=False,
+                             local_mode=False)
 
         with patch.object(RougeLogger,
                           '_setup_otlp_logging_handler') as mock_otlp:
@@ -121,12 +121,12 @@ class TestLogger(unittest.TestCase):
         mock_boto_session.return_value = mock_session_instance
 
         config = RougeConfig(service_name="test-service",
-                                 github_owner="test-owner",
-                                 github_repo_name="test-repo",
-                                 github_commit_hash="test-hash",
-                                 enable_span_cloud_export=True,
-                                 enable_log_cloud_export=False,
-                                 local_mode=False)
+                             github_owner="test-owner",
+                             github_repo_name="test-repo",
+                             github_commit_hash="test-hash",
+                             enable_span_cloud_export=True,
+                             enable_log_cloud_export=False,
+                             local_mode=False)
 
         with patch.object(CredentialManager,
                           'get_credentials',
@@ -219,12 +219,12 @@ class TestLogger(unittest.TestCase):
         }
 
         config = RougeConfig(service_name="test-service",
-                                 github_owner="test-owner",
-                                 github_repo_name="test-repo",
-                                 github_commit_hash="test-hash",
-                                 enable_span_cloud_export=True,
-                                 enable_log_cloud_export=True,
-                                 local_mode=False)
+                             github_owner="test-owner",
+                             github_repo_name="test-repo",
+                             github_commit_hash="test-hash",
+                             enable_span_cloud_export=True,
+                             enable_log_cloud_export=True,
+                             local_mode=False)
 
         with patch.object(CredentialManager,
                           'get_credentials',
@@ -252,12 +252,12 @@ class TestLogger(unittest.TestCase):
         based on export settings
         """
         config = RougeConfig(service_name="test-service",
-                                 github_owner="test-owner",
-                                 github_repo_name="test-repo",
-                                 github_commit_hash="test-hash",
-                                 enable_span_cloud_export=True,
-                                 enable_log_cloud_export=True,
-                                 local_mode=False)
+                             github_owner="test-owner",
+                             github_repo_name="test-repo",
+                             github_commit_hash="test-hash",
+                             enable_span_cloud_export=True,
+                             enable_log_cloud_export=True,
+                             local_mode=False)
 
         with patch.object(CredentialManager,
                           'check_and_refresh_if_needed',

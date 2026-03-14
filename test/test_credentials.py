@@ -14,18 +14,18 @@ class TestCredentialManager(unittest.TestCase):
     def setUp(self):
         """Set up test configuration"""
         self.config = RougeConfig(service_name="test-service",
-                                      github_owner="test-owner",
-                                      github_repo_name="test-repo",
-                                      github_commit_hash="test-hash",
-                                      token="test-token")
+                                  github_owner="test-owner",
+                                  github_repo_name="test-repo",
+                                  github_commit_hash="test-hash",
+                                  token="test-token")
 
     def test_local_mode_returns_none(self):
         """Test that local mode returns None for credentials"""
         config = RougeConfig(service_name="test-service",
-                                 github_owner="test-owner",
-                                 github_repo_name="test-repo",
-                                 github_commit_hash="test-hash",
-                                 local_mode=True)
+                             github_owner="test-owner",
+                             github_repo_name="test-repo",
+                             github_commit_hash="test-hash",
+                             local_mode=True)
 
         manager = CredentialManager(config)
         credentials = manager.get_credentials()

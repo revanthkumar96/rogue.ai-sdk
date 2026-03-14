@@ -40,13 +40,3 @@ if __name__ == "__main__":
 ## Contact Us
 
 Please reach out to founders@rouge.ai if you have any questions.
-
-[company-website-url]: https://rouge.ai
-[docs-image]: https://img.shields.io/badge/docs-rouge.ai-0dbf43
-[docs-url]: https://docs.rouge.ai
-[pypi-image]: https://badge.fury.io/py/rouge.svg
-[pypi-sdk-downloads-image]: https://static.pepy.tech/badge/rouge
-[pypi-sdk-downloads-url]: https://pypi.python.org/pypi/rouge
-[pypi-url]: https://pypi.python.org/pypi/rouge
-[testing-image]: https://github.com/rouge-ai/rouge/actions/workflows/test.yml/badge.svg
-[testing-url]: https://github.com/rouge-ai/rouge/actions/workflows/test.yml

@@ -16,13 +16,13 @@ class TestCredentialRefresh(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures"""
         self.config = RougeConfig(service_name="test-service",
-                                      github_owner="test-owner",
-                                      github_repo_name="test-repo",
-                                      github_commit_hash="abc123",
-                                      token="test-token",
-                                      aws_region="us-east-1",
-                                      local_mode=True,
-                                      enable_log_console_export=False)
+                                  github_owner="test-owner",
+                                  github_repo_name="test-repo",
+                                  github_commit_hash="abc123",
+                                  token="test-token",
+                                  aws_region="us-east-1",
+                                  local_mode=True,
+                                  enable_log_console_export=False)
 
         # Create logger in local mode to avoid CloudWatch
         # complications during setup
