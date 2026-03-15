@@ -25,8 +25,7 @@ def log_verbose(config: RougeConfig, message: str, *args: Any) -> None:
         print(f"[Rouge-Logger] {message}", *args)
 
 
-def log_verbose_error(config: RougeConfig, message: str, *args:
-                      Any) -> None:
+def log_verbose_error(config: RougeConfig, message: str, *args: Any) -> None:
     """Helper function for conditional verbose error logging (logger debugging)
 
     Args:
@@ -107,7 +106,6 @@ class TraceIdFilter(logging.Filter):
             function_name = frame_info.function
             line_number = frame_info.lineno
 
-            # NOTE (revanth_kumar): This is a hack to skip tracing and logging module
             # frames, which are not relevant to the actual code that we want to
             # trace
 
@@ -575,8 +573,7 @@ _cloudwatch_handler: watchtower.CloudWatchLogHandler | None = None
 
 def initialize_logger(
         config: RougeConfig,
-        credential_manager: CredentialManager | None = None
-) -> RougeLogger:
+        credential_manager: CredentialManager | None = None) -> RougeLogger:
     """Initialize the global logger instance"""
     log_verbose(config, "Initializing Rouge logger...")
     log_verbose(
@@ -634,8 +631,7 @@ def shutdown_logger() -> None:
 def get_logger(name: str | None = None) -> RougeLogger:
     """Get the global logger instance or create a new one"""
     if _global_logger is None:
-        raise RuntimeError(
-            "Logger not initialized. Call rouge.init() first.")
+        raise RuntimeError("Logger not initialized. Call rouge.init() first.")
 
     if name is None:
         return _global_logger

@@ -32,8 +32,7 @@ def connect_fastapi(app: FastAPI) -> None:
     config = get_config()
 
     if provider is None:
-        raise RuntimeError(
-            "Tracing not initialized. Call rouge.init() first.")
+        raise RuntimeError("Tracing not initialized. Call rouge.init() first.")
 
     if config is None:
         raise RuntimeError("Configuration not available.")

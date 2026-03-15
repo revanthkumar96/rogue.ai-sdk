@@ -183,6 +183,7 @@ def init(**kwargs: Any) -> TracerProvider:
     global _credential_manager
     _credential_manager = CredentialManager(config)
 
+
     # Create resource with service information
     tracer_verbose(config, "Creating OpenTelemetry resource...")
     resource = Resource(

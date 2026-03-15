@@ -54,8 +54,7 @@ class TestTracerInitialization(unittest.TestCase):
                 self.assertIsNotNone(rouge.tracer._config)
                 self.assertEqual(rouge.tracer._config.service_name,
                                  'test-service-from-yaml')
-                self.assertEqual(rouge.tracer._config.environment,
-                                 'test-env')
+                self.assertEqual(rouge.tracer._config.environment, 'test-env')
                 self.assertEqual(rouge.tracer._config.github_owner,
                                  'yaml-owner')
                 self.assertEqual(rouge.tracer._config.github_repo_name,
@@ -107,9 +106,8 @@ class TestTracerInitialization(unittest.TestCase):
                                  'overridecommit456')  # Overridden
                 self.assertEqual(rouge.tracer._config.token,
                                  'override-token-456')  # Overridden
-                self.assertEqual(
-                    rouge.tracer._config.enable_log_cloud_export,
-                    False)  # Overridden
+                self.assertEqual(rouge.tracer._config.enable_log_cloud_export,
+                                 False)  # Overridden
 
     def test_init_without_yaml_config(self):
         """Test that rouge.init() works without YAML configuration"""
@@ -219,8 +217,7 @@ class TestTracerInitialization(unittest.TestCase):
                 self.assertEqual(rouge.tracer._config.service_name,
                                  'yaml-service')
                 self.assertEqual(rouge.tracer._config.token, 'yaml-token')
-                self.assertEqual(rouge.tracer._config.environment,
-                                 'yaml-env')
+                self.assertEqual(rouge.tracer._config.environment, 'yaml-env')
 
                 # Second initialization with overrides
                 # - this should reinitialize
