@@ -65,6 +65,14 @@ fastapi = [
 llm = [
     "opentelemetry-instrumentation-openai",
     "opentelemetry-instrumentation-anthropic",
+    "opentelemetry-instrumentation-cohere",
+    "opentelemetry-instrumentation-mistralai",
+    "opentelemetry-instrumentation-llamaindex",
+    "opentelemetry-instrumentation-haystack",
+    "opentelemetry-instrumentation-bedrock",
+    "opentelemetry-instrumentation-vertexai",
+    "opentelemetry-instrumentation-replicate",
+    "opentelemetry-instrumentation-google-generativeai",
     "opentelemetry-instrumentation-langchain",
 ]
 all = [
@@ -98,6 +106,14 @@ all = [
     "opentelemetry-instrumentation-fastapi==0.55b1",
     "opentelemetry-instrumentation-openai",
     "opentelemetry-instrumentation-anthropic",
+    "opentelemetry-instrumentation-cohere",
+    "opentelemetry-instrumentation-mistralai",
+    "opentelemetry-instrumentation-llamaindex",
+    "opentelemetry-instrumentation-haystack",
+    "opentelemetry-instrumentation-bedrock",
+    "opentelemetry-instrumentation-vertexai",
+    "opentelemetry-instrumentation-replicate",
+    "opentelemetry-instrumentation-google-generativeai",
     "opentelemetry-instrumentation-langchain",
 ]
 [project.urls]

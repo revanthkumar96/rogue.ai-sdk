@@ -16,6 +16,27 @@ pip install rouge
 pip install "rouge[llm]"
 ```
 
+Then initialize:
+
+```python
+import rouge
+
+# Basic initialization (auto-detects and instruments all installed LLM providers)
+rouge.init(
+    service_name="my-llm-service",
+    # ... other config ...
+)
+
+# Advanced LLM configuration
+rouge.init(
+    service_name="my-llm-service",
+    instrument_llm=True,                # Enable/disable all LLM instrumentation
+    llm_providers=["openai", "anthropic"] # Only instrument specific providers
+)
+```
+
+Supported LLM providers and frameworks: OpenAI, Anthropic, Cohere, Mistral AI, Vertex AI, AWS Bedrock, Replicate, Google Generative AI (Gemini), LangChain, LlamaIndex.
+
 ## Examples
 
 ```python

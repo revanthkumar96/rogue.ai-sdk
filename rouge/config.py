@@ -51,6 +51,10 @@ class RougeConfig:
     # Verbose logging for debugging
     logger_verbose: bool = False
 
+    # LLM Instrumentation
+    instrument_llm: bool = True
+    llm_providers: list[str] | None = None
+
     def __post_init__(self):
         self._name = self.name
         self._sub_name = (f"{self.service_name}-"
