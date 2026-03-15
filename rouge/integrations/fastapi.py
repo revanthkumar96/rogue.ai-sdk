@@ -64,7 +64,8 @@ def connect_fastapi(app: FastAPI) -> None:
             span.set_attribute("service.name", config.service_name)
             span.set_attribute("telemetry.sdk.language", "python")
 
-            # Removed redundant path and method extraction as it's handled in server_request_hook
+            # Removed redundant path and method extraction as it's
+            # handled in server_request_hook
 
             if message:
                 status_code = message.get('status', '')
