@@ -28,7 +28,8 @@ from opentelemetry.util._once import Once
 from rouge.config import RougeConfig
 from rouge.constants import ENV_VAR_MAPPING
 from rouge.credentials import CredentialManager
-from rouge.logger import initialize_logger, shutdown_logger
+from rouge.integrations.llm import instrument_llm
+from rouge.logger import shutdown_logger
 from rouge.utils.config import find_rouge_config
 
 
@@ -183,11 +184,6 @@ def init(**kwargs: Any) -> TracerProvider:
     global _credential_manager
     _credential_manager = CredentialManager(config)
 
-    # TODO(revanth_kumar): separate logger and tracer initialization.
-    # Initialize logger first
-    tracer_verbose(config, "Initializing logger...")
-    initialize_logger(config, _credential_manager)
-
     # Create resource with service information
     tracer_verbose(config, "Creating OpenTelemetry resource...")
     resource = Resource(
@@ -244,6 +240,9 @@ def init(**kwargs: Any) -> TracerProvider:
         W3CBaggagePropagator(),  # Handles baggage header (W3C Baggage)
     ])
     set_global_textmap(propagator)
+
+    # Automatically instrument LLM providers if available
+    instrument_llm(config)
 
     tracer_verbose(config, "Rouge initialization completed successfully")
     return provider

@@ -7,8 +7,8 @@ from unittest.mock import patch
 
 import yaml
 
+from rouge import init, shutdown
 from rouge.logger import get_logger, shutdown_logger
-from rouge.tracer import init, shutdown
 
 
 class TestLoggerInitialization(unittest.TestCase):
@@ -182,7 +182,8 @@ class TestLoggerInitialization(unittest.TestCase):
                                  custom_logger.config.service_name)
                 self.assertNotEqual(default_logger.logger.name,
                                     custom_logger.logger.name)
-                self.assertEqual(custom_logger.logger.name, 'custom-logger')
+                self.assertEqual(custom_logger.logger.name,
+                                 'rouge.custom-logger')
 
     def test_logger_cloud_export_configuration(self):
         """Test that enable_log_cloud_export setting is properly configured"""

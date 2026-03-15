@@ -110,14 +110,15 @@ class TraceIdFilter(logging.Filter):
             # trace
 
             # Skip logging module frames
-            # TODO: Improve this to avoid skipping user's scripts
-            if (('rouge' in filename and 'logger.py' in filename)
-                    or ('rouge' in filename and 'tracer.py' in filename)
-                    or ('rouge' in filename and 'logging/' in filename) or
-                ('Lib' in filename and 'logging/' in filename)  # Windows
-                    or filename.startswith('__')
-                    or filename.endswith('/__init__.py')):
+            import rouge
+            rouge_dir = os.path.dirname(os.path.abspath(rouge.__file__))
+            if os.path.abspath(frame_info.filename).startswith(rouge_dir) or \
+               ('Lib' in filename and 'logging/' in filename) or \
+               filename.startswith('__') or \
+               filename.endswith('/__init__.py') or \
+               'site-packages/watchtower' in frame_info.filename:
                 continue
+
             relevant_frames.append(f"{filename}:{function_name}:{line_number}")
 
         return " -> ".join(
@@ -223,9 +224,7 @@ class RougeLogger:
         self.credential_manager = credential_manager or CredentialManager(
             config)
 
-        # TODO: investigate whether we need to add rouge
-        # prefix to the logger name
-        self.logger = logging.getLogger(name or config.service_name)
+        self.logger = logging.getLogger(f"rouge.{name or config.service_name}")
         self.logger.setLevel(logging.DEBUG)
         log_verbose(config, "Logger level set to DEBUG")
 

@@ -9,7 +9,7 @@ import yaml
 
 import rouge
 import rouge.tracer
-from rouge.tracer import init, shutdown
+from rouge import init, shutdown
 
 
 class TestTracerInitialization(unittest.TestCase):

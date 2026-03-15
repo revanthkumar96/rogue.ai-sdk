@@ -5,6 +5,7 @@ import os
 import unittest
 from contextlib import redirect_stdout
 
+import rouge
 from rouge import tracer
 
 
@@ -47,8 +48,8 @@ class TestTracerVerbose(unittest.TestCase):
         captured_output = io.StringIO()
 
         with redirect_stdout(captured_output):
-            # Initialize tracer with verbose logging enabled
-            tracer.init()
+            # Initialize rouge with verbose logging enabled
+            rouge.init()
 
             # Get the config to verify tracer_verbose is True
             config = tracer.get_config()
@@ -76,7 +77,7 @@ class TestTracerVerbose(unittest.TestCase):
 
         with redirect_stdout(captured_output):
             # Initialize tracer with verbose logging disabled
-            tracer.init()
+            rouge.init()
 
             # Get the config to verify tracer_verbose is False
             config = tracer.get_config()
@@ -97,7 +98,7 @@ class TestTracerVerbose(unittest.TestCase):
         os.environ['ROUGE_GITHUB_COMMIT_HASH'] = 'abc123'
 
         # Initialize tracer
-        tracer.init()
+        rouge.init()
 
         # Define a test function to trace
         @tracer.trace()
@@ -128,7 +129,7 @@ class TestTracerVerbose(unittest.TestCase):
 
         with redirect_stdout(captured_output):
             # Initialize tracer with logger verbose logging enabled
-            tracer.init()
+            rouge.init()
 
             # Get the config to verify logger_verbose is True
             config = tracer.get_config()
@@ -157,7 +158,7 @@ class TestTracerVerbose(unittest.TestCase):
 
         with redirect_stdout(captured_output):
             # Initialize tracer with logger verbose logging disabled
-            tracer.init()
+            rouge.init()
 
             # Get the config to verify logger_verbose is False
             config = tracer.get_config()
@@ -188,7 +189,7 @@ class TestTracerVerbose(unittest.TestCase):
 
         with redirect_stdout(captured_output):
             # Initialize tracer with both verbose modes enabled
-            tracer.init()
+            rouge.init()
 
             # Get the config to verify both verbose modes are True
             config = tracer.get_config()
@@ -217,7 +218,7 @@ class TestTracerVerbose(unittest.TestCase):
 
         with redirect_stdout(captured_output):
             # Initialize tracer without setting tracer_verbose
-            tracer.init()
+            rouge.init()
 
             # Get the config to verify tracer_verbose defaults to False
             config = tracer.get_config()
