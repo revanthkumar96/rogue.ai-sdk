@@ -28,9 +28,9 @@ from opentelemetry.util._once import Once
 from rouge.config import RougeConfig
 from rouge.constants import ENV_VAR_MAPPING
 from rouge.credentials import CredentialManager
-from rouge.logger import initialize_logger, shutdown_logger
-from rouge.utils.config import find_rouge_config
 from rouge.integrations.llm import instrument_llm
+from rouge.logger import shutdown_logger
+from rouge.utils.config import find_rouge_config
 
 
 def tracer_verbose(config: RougeConfig, message: str, *args: Any) -> None:
@@ -183,7 +183,6 @@ def init(**kwargs: Any) -> TracerProvider:
     # Initialize shared credential manager
     global _credential_manager
     _credential_manager = CredentialManager(config)
-
 
     # Create resource with service information
     tracer_verbose(config, "Creating OpenTelemetry resource...")

@@ -5,7 +5,7 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import (BatchSpanProcessor,
                                             SimpleSpanProcessor)
 
-from rouge.tracer import init
+from rouge import init
 
 
 class TestTracer(unittest.TestCase):

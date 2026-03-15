@@ -1,8 +1,5 @@
 """LLM Provider Auto-Instrumentation for Rouge"""
 
-import importlib
-from typing import Any
-
 from rouge.config import RougeConfig
 
 
@@ -11,7 +8,7 @@ def instrument_llm(config: RougeConfig) -> None:
     Automatically instrument LLM providers if their libraries are installed.
     Supported: OpenAI, Anthropic, LangChain.
     """
-    
+
     # 1. OpenAI Integration
     try:
         from opentelemetry.instrumentation.openai import OpenAIInstrumentor
@@ -26,7 +23,8 @@ def instrument_llm(config: RougeConfig) -> None:
 
     # 2. Anthropic Integration
     try:
-        from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
+        from opentelemetry.instrumentation.anthropic import \
+            AnthropicInstrumentor
         AnthropicInstrumentor().instrument()
         if config.tracer_verbose:
             print("[Rouge-Tracer] Anthropic auto-instrumentation enabled.")
@@ -38,9 +36,10 @@ def instrument_llm(config: RougeConfig) -> None:
 
     # 3. LangChain Integration
     try:
-        # Note: LangChain instrumentation usually requires the provider-specific
+        # Note: LangChain instrumentation usually requires the provider-spec
         # instrumentors to be active as well for full trace context.
-        from opentelemetry.instrumentation.langchain import LangChainInstrumentor
+        from opentelemetry.instrumentation.langchain import \
+            LangChainInstrumentor
         LangChainInstrumentor().instrument()
         if config.tracer_verbose:
             print("[Rouge-Tracer] LangChain auto-instrumentation enabled.")

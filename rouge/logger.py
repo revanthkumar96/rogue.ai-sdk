@@ -118,7 +118,7 @@ class TraceIdFilter(logging.Filter):
                filename.endswith('/__init__.py') or \
                'site-packages/watchtower' in frame_info.filename:
                 continue
-            
+
             relevant_frames.append(f"{filename}:{function_name}:{line_number}")
 
         return " -> ".join(
