@@ -30,6 +30,7 @@ from rouge.constants import ENV_VAR_MAPPING
 from rouge.credentials import CredentialManager
 from rouge.logger import initialize_logger, shutdown_logger
 from rouge.utils.config import find_rouge_config
+from rouge.integrations.llm import instrument_llm
 
 
 def tracer_verbose(config: RougeConfig, message: str, *args: Any) -> None:
@@ -240,6 +241,9 @@ def init(**kwargs: Any) -> TracerProvider:
         W3CBaggagePropagator(),  # Handles baggage header (W3C Baggage)
     ])
     set_global_textmap(propagator)
+
+    # Automatically instrument LLM providers if available
+    instrument_llm(config)
 
     tracer_verbose(config, "Rouge initialization completed successfully")
     return provider

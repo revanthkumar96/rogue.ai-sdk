@@ -12,6 +12,8 @@ Please see the [Python SDK Docs](https://github.com/revanthkumar96/rouge.ai-sdk)
 
 ```bash
 pip install rouge
+# Or with LLM auto-instrumentation support:
+pip install "rouge[llm]"
 ```
 
 ## Examples
