@@ -16,7 +16,7 @@ Thank you for your interest in contributing to the Rouge project! 🎉 We're exc
 
 ### Reporting Issues 🐛
 
-If you encounter any issues or have suggestions for improvements, please feel free to open an issue on our [GitHub repository](https://github.com/rouge-ai/rouge-sdk/issues).
+If you encounter any issues or have suggestions for improvements, please feel free to open an issue on our [GitHub repository](https://github.com/revanthkumar96/rouge.ai-sdk/issues).
 
 ### Contributing Code 💻
 
@@ -164,8 +164,8 @@ Examples:
 ## Quick Start 🚀
 
 ```bash
-git clone https://github.com/rouge-ai/rouge-sdk.git
-cd rouge-sdk
+git clone https://github.com/revanthkumar96/rouge.ai-sdk.git
+cd rouge.ai-sdk
 
 # Create and activate a virtual environment
 python3.11 -m venv venv

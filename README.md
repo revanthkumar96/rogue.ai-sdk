@@ -1,12 +1,12 @@
 # Rouge Python SDK
 
 <div align="center">
-  <a href="https://rouge.ai/">
-    <img src="https://raw.githubusercontent.com/rouge-ai/rouge/main/misc/images/rouge_logo.png" alt="Rouge Logo">
+  <a href="https://github.com/revanthkumar96/rouge.ai-sdk">
+    <img src="https://raw.githubusercontent.com/revanthkumar96/rouge.ai-sdk/main/misc/images/rouge_logo.png" alt="Rouge Logo">
   </a>
 </div>
 
-Please see the [Python SDK Docs](https://docs.rouge.ai/sdk/python) for details.
+Please see the [Python SDK Docs](https://github.com/revanthkumar96/rouge.ai-sdk) for details.
 
 ## Installation
 
@@ -39,4 +39,4 @@ if __name__ == "__main__":
 
 ## Contact Us
 
-Please reach out to founders@rouge.ai if you have any questions.
+Please reach out to sudikondarevanthkumar@gmail.com if you have any questions.
