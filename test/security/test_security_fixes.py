@@ -2,19 +2,13 @@
 
 import os
 import unittest
-from unittest.mock import MagicMock, patch
 
 from rouge.config import RougeConfig
-from rouge.integrations.fastapi import sanitize_headers, _sanitize_body
+from rouge.integrations.fastapi import _sanitize_body, sanitize_headers
 from rouge.logger import SensitiveDataFilter
-from rouge.utils.security import (
-    CredentialCache,
-    validate_commit_hash,
-    validate_config_value,
-    validate_github_identifier,
-    validate_service_name,
-    validate_token,
-)
+from rouge.utils.security import (CredentialCache, validate_commit_hash,
+                                  validate_github_identifier,
+                                  validate_service_name, validate_token)
 
 
 class TestConfigSecurity(unittest.TestCase):
@@ -23,83 +17,70 @@ class TestConfigSecurity(unittest.TestCase):
     def test_https_endpoint_required(self):
         """Test that HTTP endpoints are rejected by default"""
         with self.assertRaises(ValueError) as context:
-            config = RougeConfig(
-                service_name="test-service",
-                github_owner="test-owner",
-                github_repo_name="test-repo",
-                github_commit_hash="abc1234",
-                otlp_endpoint="http://example.com/traces"
-            )
+            RougeConfig(service_name="test-service",
+                        github_owner="test-owner",
+                        github_repo_name="test-repo",
+                        github_commit_hash="abc1234",
+                        otlp_endpoint="http://example.com/traces")
 
         self.assertIn("Insecure HTTP endpoint", str(context.exception))
 
     def test_https_endpoint_allowed(self):
         """Test that HTTPS endpoints are accepted"""
-        config = RougeConfig(
-            service_name="test-service",
-            github_owner="test-owner",
-            github_repo_name="test-repo",
-            github_commit_hash="abc1234",
-            otlp_endpoint="https://example.com/traces"
-        )
+        config = RougeConfig(service_name="test-service",
+                             github_owner="test-owner",
+                             github_repo_name="test-repo",
+                             github_commit_hash="abc1234",
+                             otlp_endpoint="https://example.com/traces")
         self.assertEqual(config.otlp_endpoint, "https://example.com/traces")
 
     def test_localhost_http_allowed(self):
         """Test that HTTP is allowed for localhost"""
-        config = RougeConfig(
-            service_name="test-service",
-            github_owner="test-owner",
-            github_repo_name="test-repo",
-            github_commit_hash="abc1234",
-            otlp_endpoint="http://localhost:4318/traces"
-        )
+        config = RougeConfig(service_name="test-service",
+                             github_owner="test-owner",
+                             github_repo_name="test-repo",
+                             github_commit_hash="abc1234",
+                             otlp_endpoint="http://localhost:4318/traces")
         self.assertEqual(config.otlp_endpoint, "http://localhost:4318/traces")
 
     def test_http_allowed_with_flag(self):
         """Test that HTTP can be explicitly allowed"""
-        config = RougeConfig(
-            service_name="test-service",
-            github_owner="test-owner",
-            github_repo_name="test-repo",
-            github_commit_hash="abc1234",
-            otlp_endpoint="http://example.com/traces",
-            allow_insecure_transport=True
-        )
+        config = RougeConfig(service_name="test-service",
+                             github_owner="test-owner",
+                             github_repo_name="test-repo",
+                             github_commit_hash="abc1234",
+                             otlp_endpoint="http://example.com/traces",
+                             allow_insecure_transport=True)
         self.assertEqual(config.otlp_endpoint, "http://example.com/traces")
 
     def test_metadata_endpoint_blocked(self):
         """Test that metadata endpoints are blocked"""
         with self.assertRaises(ValueError) as context:
-            config = RougeConfig(
+            RougeConfig(
                 service_name="test-service",
                 github_owner="test-owner",
                 github_repo_name="test-repo",
                 github_commit_hash="abc1234",
                 otlp_endpoint="http://169.254.169.254/latest/meta-data",
-                allow_insecure_transport=True
-            )
+                allow_insecure_transport=True)
 
         self.assertIn("Metadata endpoint not allowed", str(context.exception))
 
     def test_body_logging_disabled_by_default(self):
         """Test that body logging is disabled by default"""
-        config = RougeConfig(
-            service_name="test-service",
-            github_owner="test-owner",
-            github_repo_name="test-repo",
-            github_commit_hash="abc1234"
-        )
+        config = RougeConfig(service_name="test-service",
+                             github_owner="test-owner",
+                             github_repo_name="test-repo",
+                             github_commit_hash="abc1234")
         self.assertFalse(config.log_response_bodies)
         self.assertFalse(config.log_request_bodies)
 
     def test_sanitization_enabled_by_default(self):
         """Test that data sanitization is enabled by default"""
-        config = RougeConfig(
-            service_name="test-service",
-            github_owner="test-owner",
-            github_repo_name="test-repo",
-            github_commit_hash="abc1234"
-        )
+        config = RougeConfig(service_name="test-service",
+                             github_owner="test-owner",
+                             github_repo_name="test-repo",
+                             github_commit_hash="abc1234")
         self.assertTrue(config.sanitize_telemetry_data)
 
 
@@ -188,9 +169,8 @@ class TestHeaderSanitization(unittest.TestCase):
 
         sanitized = sanitize_headers(headers)
 
-        self.assertEqual(
-            sanitized['http.header.authorization'], '***REDACTED***'
-        )
+        self.assertEqual(sanitized['http.header.authorization'],
+                         '***REDACTED***')
         self.assertEqual(sanitized['http.header.x-api-key'], '***REDACTED***')
         self.assertEqual(sanitized['http.header.cookie'], '***REDACTED***')
 
@@ -203,9 +183,8 @@ class TestHeaderSanitization(unittest.TestCase):
 
         sanitized = sanitize_headers(headers)
 
-        self.assertEqual(
-            sanitized['http.header.content-type'], 'application/json'
-        )
+        self.assertEqual(sanitized['http.header.content-type'],
+                         'application/json')
         self.assertEqual(sanitized['http.header.user-agent'], 'Mozilla/5.0')
 
     def test_unknown_headers_dropped(self):
@@ -292,8 +271,7 @@ class TestLoggerSensitiveDataFilter(unittest.TestCase):
             lineno=1,
             msg="AWS credentials: aws_access_key_id=AKIAIOSFODNN7EXAMPLE",
             args=(),
-            exc_info=None
-        )
+            exc_info=None)
 
         # Apply filter
         filter_obj.filter(record)
@@ -315,8 +293,7 @@ class TestLoggerSensitiveDataFilter(unittest.TestCase):
             lineno=1,
             msg="API key: sk-1234567890abcdef1234567890abcdef12345678901234",
             args=(),
-            exc_info=None
-        )
+            exc_info=None)
 
         filter_obj.filter(record)
 
@@ -334,7 +311,8 @@ class TestCredentialCache(unittest.TestCase):
             'hash': 'test-hash-123',
             'region': 'us-west-2',
             'aws_access_key_id': 'AKIAIOSFODNN7EXAMPLE',
-            'aws_secret_access_key': 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
+            'aws_secret_access_key':
+            'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
             'aws_session_token': 'session-token-example',
         }
 

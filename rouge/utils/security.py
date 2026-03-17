@@ -29,8 +29,7 @@ def validate_service_name(value: str) -> str:
     if not re.match(r'^[a-zA-Z0-9_\-\.]{1,64}$', value):
         raise ValueError(
             "Invalid service_name. Use alphanumeric characters, dash, "
-            "underscore, or dot only (max 64 chars)"
-        )
+            "underscore, or dot only (max 64 chars)")
     return value
 
 
@@ -50,8 +49,7 @@ def validate_github_identifier(field_name: str, value: str) -> str:
     if not re.match(r'^[a-zA-Z0-9_\-\.]{1,100}$', value):
         raise ValueError(
             f"Invalid {field_name}. Use alphanumeric characters, dash, "
-            f"underscore, or dot only (max 100 chars)"
-        )
+            f"underscore, or dot only (max 100 chars)")
     return value
 
 
@@ -69,8 +67,7 @@ def validate_commit_hash(value: str) -> str:
     """
     if not re.match(r'^[a-f0-9]{7,40}$', value):
         raise ValueError(
-            "Invalid git commit hash. Must be 7-40 hexadecimal characters"
-        )
+            "Invalid git commit hash. Must be 7-40 hexadecimal characters")
     return value
 
 
@@ -88,8 +85,7 @@ def validate_token(value: str) -> str:
     """
     if len(value) < 20 or len(value) > 500:
         raise ValueError(
-            "Invalid token length. Must be between 20 and 500 characters"
-        )
+            "Invalid token length. Must be between 20 and 500 characters")
     return value
 
 
@@ -182,8 +178,7 @@ class CredentialCache:
                 "Credential cache will use simple obfuscation only. "
                 "Install cryptography for secure encryption: "
                 "pip install cryptography",
-                file=sys.stderr
-            )
+                file=sys.stderr)
             return None
 
     def _encrypt_data(self, data: bytes) -> bytes:
@@ -269,10 +264,8 @@ class CredentialCache:
             return True
 
         except Exception as e:
-            print(
-                f"[Rouge] Warning: Failed to cache credentials: {e}",
-                file=sys.stderr
-            )
+            print(f"[Rouge] Warning: Failed to cache credentials: {e}",
+                  file=sys.stderr)
             return False
 
     def load_credentials(self) -> Optional[dict]:
@@ -304,10 +297,8 @@ class CredentialCache:
             return credentials
 
         except Exception as e:
-            print(
-                f"[Rouge] Warning: Failed to load cached credentials: {e}",
-                file=sys.stderr
-            )
+            print(f"[Rouge] Warning: Failed to load cached credentials: {e}",
+                  file=sys.stderr)
             return None
 
     def clear_cache(self) -> bool:
