@@ -71,7 +71,7 @@ class TestTracer(unittest.TestCase):
                         github_commit_hash="test-hash",
                         enable_span_console_export=True,
                         enable_span_cloud_export=True,
-                        otlp_endpoint="http://test-endpoint:4318/v1/traces")
+                        otlp_endpoint="https://test-endpoint:4318/v1/traces")
 
         # Verify that a TracerProvider was created
         self.assertIsInstance(provider, TracerProvider)
@@ -97,7 +97,7 @@ class TestTracer(unittest.TestCase):
                         github_commit_hash="test-hash",
                         enable_span_console_export=False,
                         enable_span_cloud_export=False,
-                        otlp_endpoint="http://test-endpoint:4318/v1/traces")
+                        otlp_endpoint="https://test-endpoint:4318/v1/traces")
 
         # Verify that a TracerProvider was created
         self.assertIsInstance(provider, TracerProvider)
@@ -116,7 +116,7 @@ class TestTracer(unittest.TestCase):
                         github_commit_hash="test-hash",
                         enable_span_console_export=True,
                         enable_span_cloud_export=False,
-                        otlp_endpoint="http://test-endpoint:4318/v1/traces")
+                        otlp_endpoint="https://test-endpoint:4318/v1/traces")
 
         # Verify that a TracerProvider was created
         self.assertIsInstance(provider, TracerProvider)
@@ -150,7 +150,7 @@ class TestTracer(unittest.TestCase):
                         github_commit_hash="test-hash",
                         enable_span_console_export=False,
                         enable_span_cloud_export=True,
-                        otlp_endpoint="http://test-endpoint:4318/v1/traces")
+                        otlp_endpoint="https://test-endpoint:4318/v1/traces")
 
         # Verify that a TracerProvider was created
         self.assertIsInstance(provider, TracerProvider)

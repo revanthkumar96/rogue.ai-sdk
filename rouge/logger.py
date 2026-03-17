@@ -1,6 +1,7 @@
 import inspect
 import logging
 import os
+import re
 import sys
 import time
 from typing import Any
@@ -11,6 +12,81 @@ from opentelemetry.trace import get_current_span
 
 from rouge.config import RougeConfig
 from rouge.credentials import CredentialManager
+
+
+class SensitiveDataFilter(logging.Filter):
+    """Filter to redact sensitive data patterns from log messages.
+
+    This filter automatically redacts:
+    - AWS credentials (access keys, secret keys, session tokens)
+    - API keys (OpenAI, Anthropic, generic API keys)
+    - Tokens and bearer tokens
+    - Passwords
+    """
+
+    # Sensitive data patterns
+    PATTERNS = [
+        # AWS credentials
+        (r'(aws_access_key_id["\']?\s*[:=]\s*["\']?)([A-Z0-9]{20})',
+         r'\1***REDACTED***'),
+        (r'(aws_secret_access_key["\']?\s*[:=]\s*["\']?)([A-Za-z0-9/+=]{40})',
+         r'\1***REDACTED***'),
+        (r'(aws_session_token["\']?\s*[:=]\s*["\']?)([A-Za-z0-9/+=]+)',
+         r'\1***REDACTED***'),
+
+        # Generic API keys and tokens
+        (r'(token["\']?\s*[:=]\s*["\']?|\btoken\b\s*[:=]\s*)'
+         r'([A-Za-z0-9_\-\.]{20,})', r'\1***REDACTED***', re.IGNORECASE),
+        (r'(api[_-]?key["\']?\s*[:=]\s*["\']?|\bapi[_-]?key\b\s*[:=]\s*)'
+         r'([A-Za-z0-9_\-\.]{20,})', r'\1***REDACTED***', re.IGNORECASE),
+        (r'(bearer\s+)([A-Za-z0-9_\-\.]{20,})', r'\1***REDACTED***',
+         re.IGNORECASE),
+
+        # OpenAI API keys
+        (r'(sk-[A-Za-z0-9]{44,52})', r'***REDACTED***', re.IGNORECASE),
+
+        # Anthropic API keys
+        (r'(sk-ant-[A-Za-z0-9\-]{90,105})', r'***REDACTED***', re.IGNORECASE),
+
+        # Passwords
+        (r'(password["\']?\s*[:=]\s*["\']?)([^"\']{1,})', r'\1***REDACTED***',
+         re.IGNORECASE),
+    ]
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        """Redact sensitive data from the log record.
+
+        Args:
+            record: Log record to filter
+
+        Returns:
+            True to allow the record to be logged
+        """
+        try:
+            # Get the original message
+            message = record.getMessage()
+
+            # Apply all redaction patterns
+            for pattern_args in self.PATTERNS:
+                if len(pattern_args) == 2:
+                    pattern, replacement = pattern_args
+                    flags = 0
+                else:
+                    pattern, replacement, flags = pattern_args
+
+                message = re.sub(pattern, replacement, message, flags=flags)
+
+            # Update the record's message
+            # We need to update both msg and args to prevent re-formatting
+            record.msg = message
+            record.args = ()
+
+        except Exception:
+            # If anything goes wrong, let the record through
+            # Better to log potentially sensitive data than crash
+            pass
+
+        return True
 
 
 def log_verbose(config: RougeConfig, message: str, *args: Any) -> None:
@@ -244,6 +320,10 @@ class RougeLogger:
         # Create trace filter
         self.trace_filter = TraceIdFilter(config)
 
+        # SECURITY: Add sensitive data filter to all loggers
+        self.sensitive_data_filter = SensitiveDataFilter()
+        self.logger.addFilter(self.sensitive_data_filter)
+
         # Setup handlers
         if self.config.enable_log_console_export:
             log_verbose(config, "Setting up console log handler...")
@@ -310,9 +390,9 @@ class RougeLogger:
                 log_verbose(
                     self.config, f"Using AWS region from credentials: "
                     f"{credentials['region']}")
-                log_verbose(
-                    self.config, f"Using AWS access key ID: "
-                    f"{credentials['aws_access_key_id'][:8]}...")
+                # SECURITY FIX: Removed credential logging
+                log_verbose(self.config,
+                            "Using provided AWS credentials (redacted)")
 
                 session = boto3.Session(
                     aws_access_key_id=credentials['aws_access_key_id'],
