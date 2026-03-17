@@ -8,7 +8,7 @@ version = "0.0.7"
 description = "The SDK that revolutionizes debugging and tracing."
 readme = "README.md"
 requires-python = ">=3.10"
-license = {text = "Apache-2.0"}
+license = {text = "Apache-2.0 OR MIT"}
 authors = [
     {name = "Sudikonda Revanth Kumar"},
 ]
@@ -17,6 +17,7 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: Apache Software License",
+    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
