@@ -18,20 +18,20 @@
 - [Responsible Disclosure Policy](#responsible-disclosure-policy)
 - [Contact](#contact)
 
----
+______________________________________________________________________
 
 ## Supported Versions
 
 The Rouge.AI team provides security updates for the following versions:
 
-| Version | Supported          | Status      |
-| ------- | ------------------ | ----------- |
-| 0.0.x   | :white_check_mark: | Active      |
+| Version | Supported          | Status        |
+| ------- | ------------------ | ------------- |
+| 0.0.x   | :white_check_mark: | Active        |
 | < 0.0.1 | :x:                | Not Supported |
 
 **Note**: We are committed to maintaining security updates for the current major version. As Rouge.AI matures, this table will be updated with our long-term support policy.
 
----
+______________________________________________________________________
 
 ## Reporting a Vulnerability
 
@@ -42,11 +42,12 @@ The Rouge.AI team and community take all security vulnerabilities seriously. We 
 **Use GitHub's Private Vulnerability Reporting** (Preferred Method)
 
 1. Navigate to the [Rouge.AI repository](https://github.com/revanthkumar96/rouge.ai-sdk)
-2. Click on the **"Security"** tab
-3. Select **"Report a vulnerability"**
-4. Fill out the private vulnerability report form
+1. Click on the **"Security"** tab
+1. Select **"Report a vulnerability"**
+1. Fill out the private vulnerability report form
 
 **Do NOT**:
+
 - ❌ Open public GitHub issues for security vulnerabilities
 - ❌ Discuss vulnerabilities in public Discord channels
 - ❌ Post about unpatched vulnerabilities on social media
@@ -110,13 +111,13 @@ Email: your-email@example.com
 
 **What to Expect After Reporting:**
 
-| Timeframe | Action |
-|-----------|--------|
-| **48-72 hours** | Initial acknowledgment of your report |
-| **1 week** | Initial assessment and severity classification |
-| **2-4 weeks** | Regular updates on investigation progress |
-| **Variable** | Patch development and testing (depends on severity) |
-| **After patch** | Coordinated public disclosure and credit |
+| Timeframe       | Action                                              |
+| --------------- | --------------------------------------------------- |
+| **48-72 hours** | Initial acknowledgment of your report               |
+| **1 week**      | Initial assessment and severity classification      |
+| **2-4 weeks**   | Regular updates on investigation progress           |
+| **Variable**    | Patch development and testing (depends on severity) |
+| **After patch** | Coordinated public disclosure and credit            |
 
 #### Severity Classifications
 
@@ -130,12 +131,13 @@ Email: your-email@example.com
   - Target fix: Next regular release
 
 **We commit to**:
+
 - Keep you informed throughout the process
 - Work with you on disclosure timing
 - Credit you in the security advisory (unless you prefer anonymity)
 - Notify you before public disclosure
 
----
+______________________________________________________________________
 
 ## Security Best Practices for Users
 
@@ -265,7 +267,7 @@ def configure_tracer(config: Dict[str, Any]):
         raise TypeError("sample_rate must be a number")
 ```
 
----
+______________________________________________________________________
 
 ## Security Features
 
@@ -274,6 +276,7 @@ Rouge.AI implements several security features to protect your applications:
 ### 1. Local-First Architecture
 
 By default, Rouge.AI processes telemetry data **locally**:
+
 - No data sent to external servers without explicit configuration
 - Full control over where and how data is exported
 - Suitable for air-gapped environments
@@ -281,6 +284,7 @@ By default, Rouge.AI processes telemetry data **locally**:
 ### 2. Minimal Permissions
 
 Rouge.AI requires **no special permissions**:
+
 - No filesystem access beyond standard Python operations
 - No network access unless you configure exporters
 - No elevated privileges required
@@ -288,6 +292,7 @@ Rouge.AI requires **no special permissions**:
 ### 3. Sanitized Logging
 
 Sensitive data is automatically sanitized in logs:
+
 - API keys are redacted in error messages
 - Authentication headers are filtered
 - PII detection and masking (configurable)
@@ -295,6 +300,7 @@ Sensitive data is automatically sanitized in logs:
 ### 4. Dependency Security
 
 We maintain security through:
+
 - Regular dependency updates
 - Automated vulnerability scanning
 - Minimal dependency footprint
@@ -303,11 +309,12 @@ We maintain security through:
 ### 5. Open Source Transparency
 
 As an open-source project:
+
 - All code is publicly auditable
 - Community can review security practices
 - No hidden telemetry or tracking
 
----
+______________________________________________________________________
 
 ## Known Security Considerations
 
@@ -316,6 +323,7 @@ As an open-source project:
 **Consideration**: When using exporters, telemetry data may be stored externally.
 
 **Mitigation**:
+
 - Configure data retention policies in your backend
 - Use local exporters (file-based) for sensitive environments
 - Implement data encryption at rest
@@ -325,6 +333,7 @@ As an open-source project:
 **Consideration**: Rouge.AI instruments LLM provider SDKs that use API credentials.
 
 **Mitigation**:
+
 - Rouge.AI does **not** access, store, or transmit your API keys
 - Follows provider SDK security practices
 - Use environment variables for credential management
@@ -334,6 +343,7 @@ As an open-source project:
 **Consideration**: User-provided data in logs could lead to log injection attacks.
 
 **Mitigation**:
+
 - Sanitize user input before logging (see [Input Validation](#input-validation))
 - Use structured logging with explicit fields
 - Implement log analysis tools that detect injection attempts
@@ -343,11 +353,12 @@ As an open-source project:
 **Consideration**: Dependencies may contain vulnerabilities.
 
 **Mitigation**:
+
 - We use Dependabot for automated security updates
 - Regular security audits of dependencies
 - Minimal dependency tree to reduce attack surface
 
----
+______________________________________________________________________
 
 ## Security Advisories
 
@@ -358,9 +369,9 @@ As an open-source project:
 **Subscribe to security notifications:**
 
 1. Watch the [Rouge.AI repository](https://github.com/revanthkumar96/rouge.ai-sdk)
-2. Configure notifications for "Security alerts only"
+1. Configure notifications for "Security alerts only"
 
----
+______________________________________________________________________
 
 ## Responsible Disclosure Policy
 
@@ -369,12 +380,14 @@ We are committed to working with security researchers to verify, reproduce, and 
 ### Guidelines for Researchers
 
 **Do**:
+
 - ✅ Report vulnerabilities through private channels (GitHub Security)
 - ✅ Allow reasonable time for us to respond and fix issues
 - ✅ Make a good faith effort to avoid privacy violations and data destruction
 - ✅ Only test against your own accounts/deployments
 
 **Don't**:
+
 - ❌ Access or modify other users' data
 - ❌ Perform attacks that could harm availability (DoS, resource exhaustion)
 - ❌ Exploit vulnerabilities beyond demonstrating proof-of-concept
@@ -383,6 +396,7 @@ We are committed to working with security researchers to verify, reproduce, and 
 ### Our Commitments
 
 We commit to:
+
 - ✅ Respond to your report within 72 hours
 - ✅ Keep you updated on remediation progress
 - ✅ Credit you in the security advisory (if desired)
@@ -392,7 +406,7 @@ We commit to:
 
 When conducting security research according to this policy, we consider your actions authorized and will not recommend or pursue legal action against you. If legal action is initiated by a third party, we will take steps to make it known that your actions were conducted in compliance with this policy.
 
----
+______________________________________________________________________
 
 ## Contact
 
@@ -411,7 +425,7 @@ When conducting security research according to this policy, we consider your act
 
 For encrypted communications, please request our PGP key via email.
 
----
+______________________________________________________________________
 
 <div align="center">
   <p><strong>Thank you for helping keep Rouge.AI secure!</strong></p>

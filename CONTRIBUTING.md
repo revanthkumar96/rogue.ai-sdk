@@ -2,7 +2,7 @@
 
 Thank you for your interest in contributing to Rouge.AI! We're excited to have you join our community. As an open-source project in the rapidly evolving AI/ML observability space, we welcome contributions of all kinds—from bug fixes and features to documentation improvements and community support.
 
----
+______________________________________________________________________
 
 ## Table of Contents
 
@@ -34,7 +34,7 @@ Thank you for your interest in contributing to Rouge.AI! We're excited to have y
   - [Logging Guidelines](#logging-guidelines)
 - [Style Guide](#style-guide)
 
----
+______________________________________________________________________
 
 ## Join Our Community
 
@@ -57,7 +57,7 @@ For private inquiries or security concerns:
 Need to discuss a major contribution or architectural decision?
 📅 [Schedule a 30-minute introduction call](https://cal.com/rouge/30min)
 
----
+______________________________________________________________________
 
 ## Getting Started
 
@@ -108,6 +108,7 @@ pip install -e ".[all]"
 ```
 
 This installs:
+
 - Rouge.AI in editable mode
 - All LLM provider packages
 - Development tools (pytest, ruff, pre-commit, etc.)
@@ -134,7 +135,7 @@ Verify your setup is working correctly:
 - [ ] `pre-commit run --all-files` completes without errors
 - [ ] `pytest test` runs (even if some tests fail initially)
 
----
+______________________________________________________________________
 
 ## Development Workflow
 
@@ -180,6 +181,7 @@ git commit -m "WIP"
 **Format**: `type: brief description`
 
 **Types**:
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation changes
@@ -208,7 +210,7 @@ pre-commit run --all-files
 pre-commit run --files rouge/core/tracer.py
 ```
 
----
+______________________________________________________________________
 
 ## How to Contribute
 
@@ -244,6 +246,7 @@ Include the following information:
 #### Feature Requests
 
 Describe:
+
 - **The problem**: What pain point does this solve?
 - **Proposed solution**: How would you like it to work?
 - **Alternatives considered**: Other approaches you've thought about
@@ -265,24 +268,29 @@ We follow a standard fork-and-pull-request workflow:
 ```
 
 #### 1. Fork and Clone
+
 Already covered in [Environment Setup](#environment-setup).
 
 #### 2. Create a Feature Branch
+
 ```bash
 git checkout -b feature/your-feature-name
 ```
 
 #### 3. Make Your Changes
+
 - Write clean, readable code
 - Follow our [Coding Principles](#coding-principles)
 - Add docstrings to new functions/classes
 
 #### 4. Write Tests
+
 - Add unit tests for new features in the `test/` directory
 - Ensure bug fixes include regression tests
 - Aim for good test coverage (see [Testing Guidelines](#testing-guidelines))
 
 #### 5. Run Tests and Linting
+
 ```bash
 # Run tests
 pytest test
@@ -292,17 +300,20 @@ pre-commit run --all-files
 ```
 
 #### 6. Commit Your Changes
+
 ```bash
 git add .
 git commit -m "feat: add support for new feature"
 ```
 
 #### 7. Push to Your Fork
+
 ```bash
 git push origin feature/your-feature-name
 ```
 
 #### 8. Create a Pull Request
+
 - Go to the original repository on GitHub
 - Click "New Pull Request"
 - Select your branch
@@ -315,12 +326,14 @@ git push origin feature/your-feature-name
 #### What to Include in Your PR
 
 ✅ **Do Include**:
+
 - Relevant unit tests for new features
 - Documentation updates if behavior changes
 - Clear commit messages
 - Screenshots/examples for UI changes
 
 ❌ **Don't Include**:
+
 - Unrelated changes (create separate PRs)
 - Large refactors mixed with features
 - Commented-out code
@@ -337,7 +350,7 @@ Documentation improvements are highly valued! You can contribute:
 
 Documentation changes follow the same PR process as code changes.
 
----
+______________________________________________________________________
 
 ## Code Review Process
 
@@ -346,9 +359,9 @@ All pull requests undergo code review to maintain quality and consistency.
 ### Purpose of Code Reviews
 
 1. **Maintain Code Quality**: Keep the codebase clean, readable, and maintainable
-2. **Knowledge Sharing**: Help contributors learn best practices
-3. **Bug Prevention**: Catch issues before they reach production
-4. **Consistency**: Ensure uniform style and architecture
+1. **Knowledge Sharing**: Help contributors learn best practices
+1. **Bug Prevention**: Catch issues before they reach production
+1. **Consistency**: Ensure uniform style and architecture
 
 ### Review Process Overview
 
@@ -361,43 +374,49 @@ All pull requests undergo code review to maintain quality and consistency.
 ```
 
 1. **PR Submitted**: Author creates pull request
-2. **Automated Checks**: CI runs tests, linting, etc.
-3. **Review**: Reviewers examine code and provide feedback
-4. **Changes**: Author addresses feedback
-5. **Re-review**: Reviewers verify changes
-6. **Approval**: At least two reviewers approve
-7. **Merge**: Maintainer merges to main branch
+1. **Automated Checks**: CI runs tests, linting, etc.
+1. **Review**: Reviewers examine code and provide feedback
+1. **Changes**: Author addresses feedback
+1. **Re-review**: Reviewers verify changes
+1. **Approval**: At least two reviewers approve
+1. **Merge**: Maintainer merges to main branch
 
 ### Review Checklist
 
 Reviewers evaluate PRs based on these criteria:
 
 #### Functionality
+
 - [ ] Code performs the intended task correctly
 - [ ] Edge cases are handled appropriately
 - [ ] No obvious bugs or logical errors
 
 #### Testing
+
 - [ ] Sufficient test coverage for new code
 - [ ] All tests pass in CI
 - [ ] Tests are clear and maintainable
 
 #### Security
+
 - [ ] No security vulnerabilities introduced
 - [ ] Input validation where appropriate
 - [ ] Secrets not hardcoded
 
 #### Code Quality
+
 - [ ] Code is readable and well-structured
 - [ ] Comments explain "why", not "what"
 - [ ] No unnecessary complexity
 
 #### Style & Standards
+
 - [ ] Follows project coding standards
 - [ ] Ruff formatting checks pass
 - [ ] Docstrings follow Google style guide
 
 #### Design
+
 - [ ] Consistent with existing architecture
 - [ ] No unnecessary code duplication
 - [ ] Dependencies are appropriate
@@ -425,28 +444,33 @@ Reviewers evaluate PRs based on these criteria:
 #### For Contributors
 
 **❌ Large Pull Requests**
+
 - Problem: PRs with 1000+ line changes are hard to review
 - Solution: Break changes into smaller, focused PRs
 
 **❌ Ignoring Feedback**
+
 - Problem: Not addressing reviewer comments
 - Solution: Respond to all feedback—agree, discuss, or explain
 
 **❌ Mixing Concerns**
+
 - Problem: Combining feature + refactor + bug fix in one PR
 - Solution: Create separate PRs for each concern
 
 #### For Reviewers
 
 **❌ Rushed Reviews**
+
 - Problem: Missing bugs or design issues
 - Solution: Take time to thoroughly understand changes
 
 **❌ Bikeshedding**
+
 - Problem: Endless debate over trivial details
 - Solution: Focus on significant issues; use automated tools for style
 
----
+______________________________________________________________________
 
 ## Testing Guidelines
 
@@ -455,6 +479,7 @@ Quality tests are essential for maintaining Rouge.AI's reliability.
 ### When to Write Tests
 
 **Always write tests when**:
+
 - ✅ Adding new features or functionality
 - ✅ Fixing bugs (write a regression test first)
 - ✅ Refactoring existing code
@@ -522,7 +547,7 @@ pytest test --cov=rouge --cov-report=html
 pytest --lf
 ```
 
----
+______________________________________________________________________
 
 ## Documentation Standards
 
@@ -566,10 +591,10 @@ def function_name(param1: str, param2: int = 0) -> bool:
 #### Key Rules
 
 1. **Use raw docstrings**: Start with `r"""`
-2. **79 character limit**: Keep lines under 79 characters
-3. **No line break after opening**: Start summary on same line as `r"""`
-4. **Type annotations**: Include types in function signature AND docstring
-5. **Default values**: Use `(default: :obj:`value`)` notation
+1. **79 character limit**: Keep lines under 79 characters
+1. **No line break after opening**: Start summary on same line as `r"""`
+1. **Type annotations**: Include types in function signature AND docstring
+1. **Default values**: Use `(default: :obj:`value`)` notation
 
 ### Examples
 
@@ -654,7 +679,7 @@ def start_span(self, name: str, attributes: dict = None) -> Span:
     pass
 ```
 
----
+______________________________________________________________________
 
 ## Coding Principles
 
@@ -726,13 +751,14 @@ def process_request(user_id: str):
 ```
 
 **Log Levels**:
+
 - `logger.debug()`: Detailed diagnostic information
 - `logger.info()`: General informational messages
 - `logger.warning()`: Warning messages for potentially harmful situations
 - `logger.error()`: Error messages for failures
 - `logger.critical()`: Critical failures requiring immediate attention
 
----
+______________________________________________________________________
 
 ## Style Guide
 
@@ -775,17 +801,17 @@ from rouge.core import Tracer
 from rouge.config import Config
 ```
 
----
+______________________________________________________________________
 
 ## Questions?
 
 If you have questions not covered in this guide:
 
 1. Check existing [GitHub Issues](https://github.com/revanthkumar96/rouge.ai-sdk/issues)
-2. Ask on [Discord](https://discord.gg/tPyffEZvvJ)
-3. Email us at [sudikondarevanthkumar@gmail.com](mailto:sudikondarevanthkumar@gmail.com)
+1. Ask on [Discord](https://discord.gg/tPyffEZvvJ)
+1. Email us at [sudikondarevanthkumar@gmail.com](mailto:sudikondarevanthkumar@gmail.com)
 
----
+______________________________________________________________________
 
 <div align="center">
   <p><strong>Thank you for contributing to Rouge.AI!</strong></p>

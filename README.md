@@ -5,14 +5,15 @@
     <img src="https://raw.githubusercontent.com/revanthkumar96/rouge.ai-sdk/main/misc/images/rouge_logo.png" alt="Rouge Logo">
   </a>
 
-  <p><strong>Production-ready observability and instrumentation for LLM applications</strong></p>
+<p><strong>Production-ready observability and instrumentation for LLM applications</strong></p>
 
-  [![PyPI version](https://badge.fury.io/py/rouge.svg)](https://badge.fury.io/py/rouge)
-  [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-  [![License](https://img.shields.io/github/license/revanthkumar96/rouge.ai-sdk)](https://github.com/revanthkumar96/rouge.ai-sdk/blob/main/LICENSE)
+[![PyPI version](https://badge.fury.io/py/rouge.svg)](https://badge.fury.io/py/rouge)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![License](https://img.shields.io/github/license/revanthkumar96/rouge.ai-sdk)](https://github.com/revanthkumar96/rouge.ai-sdk/blob/main/LICENSE)
+
 </div>
 
----
+______________________________________________________________________
 
 ## Table of Contents
 
@@ -43,20 +44,21 @@
 - [License](#license)
 - [Support](#support)
 
----
+______________________________________________________________________
 
 ## About
 
 **Rouge.AI** is a powerful Python SDK designed to provide comprehensive observability, tracing, and monitoring for LLM (Large Language Model) applications. It automatically instruments popular LLM providers and frameworks, giving you deep insights into your AI application's performance, costs, and behavior.
 
 Whether you're building chatbots, AI assistants, or complex multi-agent systems, Rouge.AI helps you:
+
 - Monitor LLM API calls and performance metrics
 - Track costs and token usage across providers
 - Debug production issues with detailed traces
 - Optimize latency and throughput
 - Ensure reliability with comprehensive logging
 
----
+______________________________________________________________________
 
 ## Key Features
 
@@ -69,7 +71,7 @@ Whether you're building chatbots, AI assistants, or complex multi-agent systems,
 - **🪶 Lightweight**: Minimal performance overhead
 - **🔒 Secure**: No data sent externally without explicit configuration
 
----
+______________________________________________________________________
 
 ## Installation
 
@@ -100,7 +102,7 @@ import rouge
 print(rouge.__version__)
 ```
 
----
+______________________________________________________________________
 
 ## Quick Start
 
@@ -166,7 +168,7 @@ response = client.chat.completions.create(
 )
 ```
 
----
+______________________________________________________________________
 
 ## Configuration
 
@@ -202,36 +204,36 @@ rouge.init(
 
 ### Configuration Options
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `service_name` | `str` | **Required** | Unique identifier for your service |
-| `environment` | `str` | `None` | Deployment environment (e.g., "production", "staging") |
-| `version` | `str` | `None` | Service version for tracking |
-| `instrument_llm` | `bool` | `True` | Enable automatic LLM provider instrumentation |
-| `llm_providers` | `List[str]` | `None` | Specific providers to instrument (default: all detected) |
+| Parameter        | Type        | Default      | Description                                              |
+| ---------------- | ----------- | ------------ | -------------------------------------------------------- |
+| `service_name`   | `str`       | **Required** | Unique identifier for your service                       |
+| `environment`    | `str`       | `None`       | Deployment environment (e.g., "production", "staging")   |
+| `version`        | `str`       | `None`       | Service version for tracking                             |
+| `instrument_llm` | `bool`      | `True`       | Enable automatic LLM provider instrumentation            |
+| `llm_providers`  | `List[str]` | `None`       | Specific providers to instrument (default: all detected) |
 
----
+______________________________________________________________________
 
 ## LLM Provider Support
 
 Rouge.AI automatically instruments the following LLM providers and frameworks:
 
-| Provider/Framework | Status | Package Required |
-|-------------------|--------|------------------|
-| **OpenAI** | ✅ Supported | `openai` |
-| **Anthropic** | ✅ Supported | `anthropic` |
-| **Cohere** | ✅ Supported | `cohere` |
-| **Mistral AI** | ✅ Supported | `mistralai` |
-| **Google Vertex AI** | ✅ Supported | `google-cloud-aiplatform` |
-| **AWS Bedrock** | ✅ Supported | `boto3` |
-| **Replicate** | ✅ Supported | `replicate` |
-| **Google Generative AI (Gemini)** | ✅ Supported | `google-generativeai` |
-| **LangChain** | ✅ Supported | `langchain` |
-| **LlamaIndex** | ✅ Supported | `llama-index` |
+| Provider/Framework                | Status       | Package Required          |
+| --------------------------------- | ------------ | ------------------------- |
+| **OpenAI**                        | ✅ Supported | `openai`                  |
+| **Anthropic**                     | ✅ Supported | `anthropic`               |
+| **Cohere**                        | ✅ Supported | `cohere`                  |
+| **Mistral AI**                    | ✅ Supported | `mistralai`               |
+| **Google Vertex AI**              | ✅ Supported | `google-cloud-aiplatform` |
+| **AWS Bedrock**                   | ✅ Supported | `boto3`                   |
+| **Replicate**                     | ✅ Supported | `replicate`               |
+| **Google Generative AI (Gemini)** | ✅ Supported | `google-generativeai`     |
+| **LangChain**                     | ✅ Supported | `langchain`               |
+| **LlamaIndex**                    | ✅ Supported | `llama-index`             |
 
 **Note**: Only installed providers will be instrumented. Rouge.AI automatically detects available packages.
 
----
+______________________________________________________________________
 
 ## Examples
 
@@ -298,16 +300,18 @@ def user_signup(email: str, username: str):
         raise
 ```
 
----
+______________________________________________________________________
 
 ## API Reference
 
 ### Core Functions
 
 #### `rouge.init(**config)`
+
 Initialize the Rouge.AI SDK with configuration options.
 
 **Parameters:**
+
 - `service_name` (str, required): Service identifier
 - `environment` (str, optional): Deployment environment
 - `version` (str, optional): Service version
@@ -315,25 +319,29 @@ Initialize the Rouge.AI SDK with configuration options.
 - `llm_providers` (List[str], optional): Specific providers to instrument
 
 #### `rouge.get_logger(name: str = None)`
+
 Get a logger instance for structured logging.
 
 **Returns:** Logger instance with trace context integration
 
 #### `rouge.get_tracer(name: str = None)`
+
 Get a tracer instance for manual span creation.
 
 **Returns:** Tracer instance for creating spans
 
 #### `@rouge.trace(name: str = None, **attributes)`
+
 Decorator to automatically trace function execution.
 
 **Parameters:**
+
 - `name` (str, optional): Custom span name (defaults to function name)
 - `**attributes`: Additional span attributes
 
 For complete API documentation, see the [Python SDK Documentation](https://github.com/revanthkumar96/rouge.ai-sdk).
 
----
+______________________________________________________________________
 
 ## Troubleshooting
 
@@ -342,31 +350,34 @@ For complete API documentation, see the [Python SDK Documentation](https://githu
 **Problem**: LLM calls are not being traced.
 
 **Solution**:
+
 1. Ensure you installed Rouge.AI with LLM support: `pip install "rouge[llm]"`
-2. Verify the provider package is installed (e.g., `pip install openai`)
-3. Check that `instrument_llm=True` in your `rouge.init()` call
-4. Ensure `rouge.init()` is called before importing the LLM provider
+1. Verify the provider package is installed (e.g., `pip install openai`)
+1. Check that `instrument_llm=True` in your `rouge.init()` call
+1. Ensure `rouge.init()` is called before importing the LLM provider
 
 ### Import Errors
 
 **Problem**: `ModuleNotFoundError` when importing Rouge.AI.
 
 **Solution**:
+
 1. Verify installation: `pip show rouge`
-2. Check Python version compatibility (requires Python 3.11+)
-3. Ensure you're using the correct virtual environment
+1. Check Python version compatibility (requires Python 3.11+)
+1. Ensure you're using the correct virtual environment
 
 ### Performance Issues
 
 **Problem**: Application slowdown after adding instrumentation.
 
 **Solution**:
-1. Reduce logging verbosity in production
-2. Use sampling for high-throughput applications
-3. Disable instrumentation for specific providers if not needed
-4. Contact support if issues persist
 
----
+1. Reduce logging verbosity in production
+1. Use sampling for high-throughput applications
+1. Disable instrumentation for specific providers if not needed
+1. Contact support if issues persist
+
+______________________________________________________________________
 
 ## FAQ
 
@@ -376,7 +387,7 @@ For complete API documentation, see the [Python SDK Documentation](https://githu
 
 ### Q: What's the performance impact?
 
-**A**: Rouge.AI is designed for production use with minimal overhead (typically <1% latency increase). Exact impact depends on your instrumentation configuration.
+**A**: Rouge.AI is designed for production use with minimal overhead (typically \<1% latency increase). Exact impact depends on your instrumentation configuration.
 
 ### Q: Can I use Rouge.AI with multiple LLM providers?
 
@@ -394,11 +405,12 @@ For complete API documentation, see the [Python SDK Documentation](https://githu
 
 **A**: Yes. Rouge.AI works seamlessly in Jupyter notebooks and other interactive environments.
 
----
+______________________________________________________________________
 
 ## Contributing
 
 We welcome contributions from the community! Whether you want to:
+
 - Report bugs or request features
 - Improve documentation
 - Submit code changes
@@ -407,47 +419,53 @@ We welcome contributions from the community! Whether you want to:
 Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on how to get started.
 
 **Quick Links:**
+
 - [Code of Conduct](CONTRIBUTING.md#join-our-community)
 - [Development Setup](CONTRIBUTING.md#getting-started)
 - [Pull Request Process](CONTRIBUTING.md#contributing-code)
 
----
+______________________________________________________________________
 
 ## Security
 
 Security is a top priority for Rouge.AI. We take all security vulnerabilities seriously.
 
 **To report a security vulnerability:**
+
 - Use GitHub's [Private Vulnerability Reporting](https://github.com/revanthkumar96/rouge.ai-sdk/security/advisories/new)
 - **Do not** open public issues for security concerns
 
 For more details, see our [Security Policy](SECURITY.md).
 
----
+______________________________________________________________________
 
 ## License
 
 This project is licensed under the [MIT License](LICENSE). See the LICENSE file for details.
 
----
+______________________________________________________________________
 
 ## Support
 
 Need help? We're here for you!
 
 ### 📧 Email
+
 [sudikondarevanthkumar@gmail.com](mailto:sudikondarevanthkumar@gmail.com)
 
 ### 💬 Discord
+
 Join our community: [Discord Server](https://discord.gg/tPyffEZvvJ)
 
 ### 🐛 Issues
+
 Report bugs or request features: [GitHub Issues](https://github.com/revanthkumar96/rouge.ai-sdk/issues)
 
 ### 📅 Schedule a Call
+
 Need dedicated support? [Book a 30-minute call](https://cal.com/rouge/30min)
 
----
+______________________________________________________________________
 
 <div align="center">
   <p>Made with ❤️ by the Rouge.AI team</p>
