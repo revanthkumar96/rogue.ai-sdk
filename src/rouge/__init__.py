@@ -1,9 +1,22 @@
+from rouge.config import RougeConfig
 from rouge.logger import get_logger
-from rouge.tracer import shutdown, trace
+from rouge.tracer import TraceOptions, shutdown, trace
 
 
 def init(**kwargs):
-    """Initialize both tracing and logging"""
+    """Initialize Rouge tracing and logging.
+
+    This is the main entry point for setting up tracing and logging.
+    Call this once at the start of your application.
+
+    Args:
+        **kwargs: Configuration parameters for RougeConfig.
+            If a .rouge-config.yaml file exists, it will be loaded first,
+            and any kwargs provided will override the file configuration.
+
+    Returns:
+        TracerProvider instance
+    """
     from rouge.logger import initialize_logger as _initialize_logger
     from rouge.tracer import init as _init
 
@@ -26,4 +39,6 @@ __all__ = [
     'trace',
     'get_logger',
     'shutdown',
+    'RougeConfig',
+    'TraceOptions',
 ]
