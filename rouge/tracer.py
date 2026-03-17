@@ -87,26 +87,37 @@ class TraceOptions:
 
 
 def _load_env_config() -> dict[str, Any]:
-    """Load configuration from environment variables.
+    """Load and validate configuration from environment variables.
 
     Returns:
-        Dictionary with config values from environment variables
+        Dictionary with validated config values from environment variables
     """
+    from rouge.utils.security import validate_config_value
+
     env_config = {}
 
     for env_var, config_field in ENV_VAR_MAPPING.items():
         value = os.getenv(env_var)
         if value is not None:
-            # Handle boolean values
-            if config_field in [
-                    "enable_span_console_export", "enable_log_console_export",
-                    "enable_span_cloud_export", "enable_log_cloud_export",
-                    "local_mode", "tracer_verbose", "logger_verbose"
-            ]:
-                env_config[config_field] = value.lower() in ('true', '1',
-                                                             'yes', 'on')
-            else:
-                env_config[config_field] = value
+            try:
+                # Handle boolean values
+                if config_field in [
+                        "enable_span_console_export",
+                        "enable_log_console_export",
+                        "enable_span_cloud_export", "enable_log_cloud_export",
+                        "local_mode", "tracer_verbose", "logger_verbose"
+                ]:
+                    env_config[config_field] = value.lower() in ('true', '1',
+                                                                 'yes', 'on')
+                else:
+                    # SECURITY FIX: Validate value before using
+                    env_config[config_field] = validate_config_value(
+                        config_field, value)
+            except ValueError as e:
+                # Log validation error and skip invalid config
+                print(f"[Rouge] Invalid config for {env_var}: {e}",
+                      file=sys.stderr)
+                continue
 
     return env_config
 

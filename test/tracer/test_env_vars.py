@@ -36,14 +36,14 @@ class TestEnvironmentVariables(unittest.TestCase):
     def test_env_var_loading(self):
         """Test the _load_env_config function directly"""
         # Set some test environment variables
-        os.environ['ROUGE_TOKEN'] = 'test-token'
+        os.environ['ROUGE_TOKEN'] = 'test-token-1234567890'
         os.environ['ROUGE_AWS_REGION'] = 'us-east-1'
         os.environ['ROUGE_LOCAL_MODE'] = 'true'
         os.environ['ROUGE_ENABLE_SPAN_CONSOLE_EXPORT'] = 'false'
 
         env_config = tracer._load_env_config()
 
-        self.assertEqual(env_config['token'], 'test-token')
+        self.assertEqual(env_config['token'], 'test-token-1234567890')
         self.assertEqual(env_config['aws_region'], 'us-east-1')
         self.assertTrue(
             env_config['local_mode'])  # Should be converted to boolean
@@ -80,7 +80,8 @@ class TestEnvironmentVariables(unittest.TestCase):
     def test_env_var_override_priority(self):
         """Test that environment variables override other config sources"""
         # Set some environment variables
-        os.environ['ROUGE_TOKEN'] = 'env-token-123'
+        # Set some environment variables
+        os.environ['ROUGE_TOKEN'] = 'env-token-1234567890abcdef'
         os.environ['ROUGE_SERVICE_NAME'] = 'env-service'
         os.environ['ROUGE_ENVIRONMENT'] = 'env-environment'
         os.environ['ROUGE_LOCAL_MODE'] = 'true'
@@ -92,7 +93,8 @@ class TestEnvironmentVariables(unittest.TestCase):
             github_owner='test-owner',
             github_repo_name='test-repo',
             github_commit_hash='abc123',
-            token='kwarg-token',  # Should be overridden by env
+            # Should be overridden by env
+            token='kwarg-token-1234567890abcdef',
             environment='kwarg-environment',  # Should be overridden by env
             local_mode=False,  # Should be overridden by env
             enable_span_console_export=True  # Should be overridden by env
@@ -102,7 +104,7 @@ class TestEnvironmentVariables(unittest.TestCase):
         config = tracer.get_config()
 
         # Verify env vars overrode kwargs
-        self.assertEqual(config.token, 'env-token-123')
+        self.assertEqual(config.token, 'env-token-1234567890abcdef')
         self.assertEqual(config.service_name, 'env-service')
         self.assertEqual(config.environment, 'env-environment')
         self.assertTrue(config.local_mode)
@@ -116,7 +118,7 @@ class TestEnvironmentVariables(unittest.TestCase):
     def test_partial_env_var_override(self):
         """Test that only set environment variables override config"""
         # Set only some environment variables
-        os.environ['ROUGE_TOKEN'] = 'env-token'
+        os.environ['ROUGE_TOKEN'] = 'env-token-1234567890'
         os.environ['ROUGE_LOCAL_MODE'] = 'true'
 
         tracer.init(service_name='kwarg-service',
@@ -130,7 +132,7 @@ class TestEnvironmentVariables(unittest.TestCase):
         config = tracer.get_config()
 
         # Verify env vars overrode specific values
-        self.assertEqual(config.token, 'env-token')
+        self.assertEqual(config.token, 'env-token-1234567890')
         self.assertTrue(config.local_mode)
 
         # Verify non-env values from kwargs remain
