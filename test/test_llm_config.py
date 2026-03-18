@@ -3,8 +3,8 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from rouge.config import RougeConfig
-from rouge.integrations.llm import instrument_llm
+from rouge_ai.config import RougeConfig
+from rouge_ai.integrations.llm import instrument_llm
 
 
 class TestLLMInstrumentationConfig(unittest.TestCase):
@@ -14,7 +14,7 @@ class TestLLMInstrumentationConfig(unittest.TestCase):
         self.config = RougeConfig(service_name="test-service",
                                   github_owner="test-owner",
                                   github_repo_name="test-repo",
-                                  github_commit_hash="abc123",
+                                  github_commit_hash="abc1234",
                                   tracer_verbose=True)
 
     @patch("builtins.__import__")

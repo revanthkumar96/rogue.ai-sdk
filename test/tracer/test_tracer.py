@@ -5,15 +5,15 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import (BatchSpanProcessor,
                                             SimpleSpanProcessor)
 
-from rouge import init
+from rouge_ai import init
 
 
 class TestTracer(unittest.TestCase):
 
     def setUp(self):
         """Reset global state before each test"""
-        import rouge.logger as logger_module
-        import rouge.tracer as tracer_module
+        import rouge_ai.logger as logger_module
+        import rouge_ai.tracer as tracer_module
 
         # Clean up any existing providers
         if tracer_module._tracer_provider:
@@ -33,8 +33,8 @@ class TestTracer(unittest.TestCase):
 
     def tearDown(self):
         """Clean up after each test"""
-        import rouge.logger as logger_module
-        import rouge.tracer as tracer_module
+        import rouge_ai.logger as logger_module
+        import rouge_ai.tracer as tracer_module
 
         if tracer_module._tracer_provider:
             tracer_module._tracer_provider.shutdown()
@@ -51,7 +51,7 @@ class TestTracer(unittest.TestCase):
         logger_module._global_logger = None
         logger_module._cloudwatch_handler = None
 
-    @patch('rouge.credentials.CredentialManager.get_credentials')
+    @patch('rouge_ai.credentials.CredentialManager.get_credentials')
     @patch('boto3.Session')
     def test_both_console_and_cloud_span_enabled(
         self,
@@ -133,7 +133,7 @@ class TestTracer(unittest.TestCase):
         self.assertIn(SimpleSpanProcessor, processor_types)
         self.assertNotIn(BatchSpanProcessor, processor_types)
 
-    @patch('rouge.credentials.CredentialManager.get_credentials')
+    @patch('rouge_ai.credentials.CredentialManager.get_credentials')
     @patch('boto3.Session')
     def test_only_cloud_span_enabled(self, mock_boto_session,
                                      mock_get_credentials):

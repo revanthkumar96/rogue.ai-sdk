@@ -1789,8 +1789,8 @@ wheels = [
 ]
 
 [[package]]
-name = "rouge"
-version = "0.0.7"
+name = "rouge-ai"
+version = "0.0.10"
 source = { editable = "." }
 dependencies = [
     { name = "opentelemetry-api" },

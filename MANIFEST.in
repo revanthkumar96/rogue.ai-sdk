@@ -1,0 +1,2 @@
+recursive-exclude src/rouge_ai/dashboard/frontend_src *
+recursive-include src/rouge_ai/dashboard/static *

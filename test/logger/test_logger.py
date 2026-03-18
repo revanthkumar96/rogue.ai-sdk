@@ -1,17 +1,17 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from rouge.config import RougeConfig
-from rouge.credentials import CredentialManager
-from rouge.logger import RougeLogger
+from rouge_ai.config import RougeConfig
+from rouge_ai.credentials import CredentialManager
+from rouge_ai.logger import RougeLogger
 
 
 class TestLogger(unittest.TestCase):
 
     def setUp(self):
         """Reset global state before each test"""
-        import rouge.logger as logger_module
-        import rouge.tracer as tracer_module
+        import rouge_ai.logger as logger_module
+        import rouge_ai.tracer as tracer_module
 
         # Clean up tracer state first
         if tracer_module._tracer_provider:
@@ -31,8 +31,8 @@ class TestLogger(unittest.TestCase):
 
     def tearDown(self):
         """Clean up after each test"""
-        import rouge.logger as logger_module
-        import rouge.tracer as tracer_module
+        import rouge_ai.logger as logger_module
+        import rouge_ai.tracer as tracer_module
 
         # Clean up tracer state
         if tracer_module._tracer_provider:
@@ -50,7 +50,7 @@ class TestLogger(unittest.TestCase):
         logger_module._global_logger = None
         logger_module._cloudwatch_handler = None
 
-    @patch('rouge.logger.watchtower.CloudWatchLogHandler')
+    @patch('rouge_ai.logger.watchtower.CloudWatchLogHandler')
     @patch('boto3.Session')
     def test_both_span_and_log_cloud_export_enabled(self, mock_boto_session,
                                                     mock_cloudwatch_handler):
@@ -109,7 +109,7 @@ class TestLogger(unittest.TestCase):
         ]
         self.assertEqual(len(cloudwatch_handlers), 0)
 
-    @patch('rouge.logger.watchtower.CloudWatchLogHandler')
+    @patch('rouge_ai.logger.watchtower.CloudWatchLogHandler')
     @patch('boto3.Session')
     def test_span_enabled_log_disabled(self, mock_boto_session,
                                        mock_cloudwatch_handler):
@@ -203,7 +203,7 @@ class TestLogger(unittest.TestCase):
         # Should setup OTLP handler in local mode
         mock_otlp.assert_called_once()
 
-    @patch('rouge.logger.watchtower.CloudWatchLogHandler')
+    @patch('rouge_ai.logger.watchtower.CloudWatchLogHandler')
     @patch('boto3.Session')
     def test_credential_refresh_logic(self, mock_boto_session,
                                       mock_cloudwatch_handler):

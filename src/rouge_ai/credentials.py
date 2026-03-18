@@ -3,7 +3,7 @@ from typing import Any
 
 import requests
 
-from rouge.config import RougeConfig
+from rouge_ai.config import RougeConfig
 
 
 class CredentialManager:
@@ -31,6 +31,19 @@ class CredentialManager:
         """
         if self.config.local_mode:
             return None
+
+        # Check if credentials are provided directly in config (Self-Hosting)
+        if (self.config.aws_access_key_id
+                and self.config.aws_secret_access_key):
+            return {
+                'aws_access_key_id': self.config.aws_access_key_id,
+                'aws_secret_access_key': self.config.aws_secret_access_key,
+                'aws_session_token': self.config.aws_session_token,
+                'region': self.config.aws_region,
+                # Use a dummy hash or service_name if not provided
+                'hash': self.config.name or self.config.service_name,
+                'otlp_endpoint': self.config.otlp_endpoint,
+            }
 
         if not self.config.enable_span_cloud_export:
             return None
@@ -61,6 +74,11 @@ class CredentialManager:
 
     def _fetch_and_cache_credentials(self) -> None:
         """Fetch credentials from API and update config automatically"""
+        # Bypass if manually provided
+        if (self.config.aws_access_key_id
+                and self.config.aws_secret_access_key):
+            return
+
         try:
             url = self.config.verification_endpoint
             params = {"token": self.config.token}

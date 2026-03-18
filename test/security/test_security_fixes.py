@@ -3,12 +3,12 @@
 import os
 import unittest
 
-from rouge.config import RougeConfig
-from rouge.integrations.fastapi import _sanitize_body, sanitize_headers
-from rouge.logger import SensitiveDataFilter
-from rouge.utils.security import (CredentialCache, validate_commit_hash,
-                                  validate_github_identifier,
-                                  validate_service_name, validate_token)
+from rouge_ai.config import RougeConfig
+from rouge_ai.integrations.fastapi import _sanitize_body, sanitize_headers
+from rouge_ai.logger import SensitiveDataFilter
+from rouge_ai.utils.security import (CredentialCache, validate_commit_hash,
+                                     validate_github_identifier,
+                                     validate_service_name, validate_token)
 
 
 class TestConfigSecurity(unittest.TestCase):
@@ -20,7 +20,7 @@ class TestConfigSecurity(unittest.TestCase):
             RougeConfig(service_name="test-service",
                         github_owner="test-owner",
                         github_repo_name="test-repo",
-                        github_commit_hash="abc1234",
+                        github_commit_hash="abc12344",
                         otlp_endpoint="http://example.com/traces")
 
         self.assertIn("Insecure HTTP endpoint", str(context.exception))
@@ -30,7 +30,7 @@ class TestConfigSecurity(unittest.TestCase):
         config = RougeConfig(service_name="test-service",
                              github_owner="test-owner",
                              github_repo_name="test-repo",
-                             github_commit_hash="abc1234",
+                             github_commit_hash="abc12344",
                              otlp_endpoint="https://example.com/traces")
         self.assertEqual(config.otlp_endpoint, "https://example.com/traces")
 
@@ -39,7 +39,7 @@ class TestConfigSecurity(unittest.TestCase):
         config = RougeConfig(service_name="test-service",
                              github_owner="test-owner",
                              github_repo_name="test-repo",
-                             github_commit_hash="abc1234",
+                             github_commit_hash="abc12344",
                              otlp_endpoint="http://localhost:4318/traces")
         self.assertEqual(config.otlp_endpoint, "http://localhost:4318/traces")
 
@@ -48,7 +48,7 @@ class TestConfigSecurity(unittest.TestCase):
         config = RougeConfig(service_name="test-service",
                              github_owner="test-owner",
                              github_repo_name="test-repo",
-                             github_commit_hash="abc1234",
+                             github_commit_hash="abc12344",
                              otlp_endpoint="http://example.com/traces",
                              allow_insecure_transport=True)
         self.assertEqual(config.otlp_endpoint, "http://example.com/traces")
@@ -60,7 +60,7 @@ class TestConfigSecurity(unittest.TestCase):
                 service_name="test-service",
                 github_owner="test-owner",
                 github_repo_name="test-repo",
-                github_commit_hash="abc1234",
+                github_commit_hash="abc12344",
                 otlp_endpoint="http://169.254.169.254/latest/meta-data",
                 allow_insecure_transport=True)
 
@@ -71,7 +71,7 @@ class TestConfigSecurity(unittest.TestCase):
         config = RougeConfig(service_name="test-service",
                              github_owner="test-owner",
                              github_repo_name="test-repo",
-                             github_commit_hash="abc1234")
+                             github_commit_hash="abc12344")
         self.assertFalse(config.log_response_bodies)
         self.assertFalse(config.log_request_bodies)
 
@@ -80,7 +80,7 @@ class TestConfigSecurity(unittest.TestCase):
         config = RougeConfig(service_name="test-service",
                              github_owner="test-owner",
                              github_repo_name="test-repo",
-                             github_commit_hash="abc1234")
+                             github_commit_hash="abc12344")
         self.assertTrue(config.sanitize_telemetry_data)
 
 
@@ -123,8 +123,8 @@ class TestInputValidation(unittest.TestCase):
     def test_validate_commit_hash_valid(self):
         """Test valid commit hashes"""
         valid_hashes = [
-            "abc1234",  # Short
-            "abc1234567890abcdef1234567890abcdef1234",  # Full
+            "abc12344",  # Short
+            "abc12344567890abcdef1234567890abcdef1234",  # Full
         ]
         for hash_val in valid_hashes:
             result = validate_commit_hash(hash_val)
@@ -164,7 +164,7 @@ class TestHeaderSanitization(unittest.TestCase):
         headers = [
             (b'authorization', b'Bearer secret-token'),
             (b'x-api-key', b'api-key-12345'),
-            (b'cookie', b'session=abc123'),
+            (b'cookie', b'session=abc1234'),
         ]
 
         sanitized = sanitize_headers(headers)

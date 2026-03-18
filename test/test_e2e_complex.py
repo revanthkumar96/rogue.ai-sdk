@@ -17,14 +17,15 @@ from typing import Any, Dict, List
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-import rouge
-from rouge.integrations.fastapi import connect_fastapi
-from rouge.logger import get_logger
-from rouge.tracer import TraceOptions, trace, write_attributes_to_current_span
+import rouge_ai
+from rouge_ai.integrations.fastapi import connect_fastapi
+from rouge_ai.logger import get_logger
+from rouge_ai.tracer import (TraceOptions, trace,
+                             write_attributes_to_current_span)
 
 # Initialize tracing
-rouge.init(
-    name="rouge-ai-experiment",
+rouge_ai.init(
+    name="rouge_ai-ai-experiment",
     service_name="complex-test-service",
     github_owner="test-owner",
     github_repo_name="test-repo",

@@ -3,7 +3,7 @@
 import os
 import unittest
 
-from rouge import tracer
+from rouge_ai import tracer
 
 
 class TestEnvironmentVariables(unittest.TestCase):
@@ -92,7 +92,7 @@ class TestEnvironmentVariables(unittest.TestCase):
             service_name='kwarg-service',  # Should be overridden by env
             github_owner='test-owner',
             github_repo_name='test-repo',
-            github_commit_hash='abc123',
+            github_commit_hash='abc1234',
             # Should be overridden by env
             token='kwarg-token-1234567890abcdef',
             environment='kwarg-environment',  # Should be overridden by env
@@ -113,7 +113,7 @@ class TestEnvironmentVariables(unittest.TestCase):
         # Verify non-env values from kwargs still work
         self.assertEqual(config.github_owner, 'test-owner')
         self.assertEqual(config.github_repo_name, 'test-repo')
-        self.assertEqual(config.github_commit_hash, 'abc123')
+        self.assertEqual(config.github_commit_hash, 'abc1234')
 
     def test_partial_env_var_override(self):
         """Test that only set environment variables override config"""
@@ -124,7 +124,7 @@ class TestEnvironmentVariables(unittest.TestCase):
         tracer.init(service_name='kwarg-service',
                     github_owner='test-owner',
                     github_repo_name='test-repo',
-                    github_commit_hash='abc123',
+                    github_commit_hash='abc1234',
                     token='kwarg-token',
                     environment='kwarg-environment',
                     local_mode=False)
@@ -176,7 +176,7 @@ class TestEnvironmentVariables(unittest.TestCase):
         tracer.init(service_name='test-service',
                     github_owner='test-owner',
                     github_repo_name='test-repo',
-                    github_commit_hash='abc123')
+                    github_commit_hash='abc1234')
 
         config = tracer.get_config()
         self.assertTrue(config.tracer_verbose)
@@ -186,7 +186,7 @@ class TestEnvironmentVariables(unittest.TestCase):
             service_name='test-service',
             github_owner='test-owner',
             github_repo_name='test-repo',
-            github_commit_hash='abc123',
+            github_commit_hash='abc1234',
             tracer_verbose=False  # Should be overridden by env var
         )
 
@@ -232,7 +232,7 @@ class TestEnvironmentVariables(unittest.TestCase):
         tracer.init(service_name='test-service',
                     github_owner='test-owner',
                     github_repo_name='test-repo',
-                    github_commit_hash='abc123')
+                    github_commit_hash='abc1234')
 
         config = tracer.get_config()
         self.assertTrue(config.logger_verbose)
@@ -242,7 +242,7 @@ class TestEnvironmentVariables(unittest.TestCase):
             service_name='test-service',
             github_owner='test-owner',
             github_repo_name='test-repo',
-            github_commit_hash='abc123',
+            github_commit_hash='abc1234',
             logger_verbose=False  # Should be overridden by env var
         )
 

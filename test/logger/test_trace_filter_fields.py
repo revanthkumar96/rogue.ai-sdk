@@ -5,8 +5,8 @@ import logging
 import unittest
 from unittest.mock import MagicMock, patch
 
-from rouge.config import RougeConfig
-from rouge.logger import TraceIdFilter
+from rouge_ai.config import RougeConfig
+from rouge_ai.logger import TraceIdFilter
 
 
 class TestTraceIdFilterFields(unittest.TestCase):
@@ -43,7 +43,7 @@ class TestTraceIdFilterFields(unittest.TestCase):
         mock_span.parent = mock_parent_context
         mock_span.name = "child_operation"
 
-        with patch('rouge.logger.get_current_span', return_value=mock_span):
+        with patch('rouge_ai.logger.get_current_span', return_value=mock_span):
             result = self.filter.filter(self.record)
 
         # Verify filter returns True
@@ -69,7 +69,7 @@ class TestTraceIdFilterFields(unittest.TestCase):
         mock_span.parent = None  # Root span has no parent
         mock_span.name = "root_operation"
 
-        with patch('rouge.logger.get_current_span', return_value=mock_span):
+        with patch('rouge_ai.logger.get_current_span', return_value=mock_span):
             result = self.filter.filter(self.record)
 
         self.assertTrue(result)
@@ -90,7 +90,7 @@ class TestTraceIdFilterFields(unittest.TestCase):
         mock_span.parent = mock_parent_context
         mock_span.name = "child_with_invalid_parent"
 
-        with patch('rouge.logger.get_current_span', return_value=mock_span):
+        with patch('rouge_ai.logger.get_current_span', return_value=mock_span):
             result = self.filter.filter(self.record)
 
         self.assertTrue(result)
@@ -110,7 +110,7 @@ class TestTraceIdFilterFields(unittest.TestCase):
         mock_span.parent = mock_parent_context
         mock_span.name = "operation_name"
 
-        with patch('rouge.logger.get_current_span', return_value=mock_span):
+        with patch('rouge_ai.logger.get_current_span', return_value=mock_span):
             result = self.filter.filter(self.record)
 
         self.assertTrue(result)
@@ -124,7 +124,7 @@ class TestTraceIdFilterFields(unittest.TestCase):
         mock_span_context.trace_id = 0  # Invalid trace ID
         mock_span.get_span_context.return_value = mock_span_context
 
-        with patch('rouge.logger.get_current_span', return_value=mock_span):
+        with patch('rouge_ai.logger.get_current_span', return_value=mock_span):
             result = self.filter.filter(self.record)
 
         self.assertTrue(result)
@@ -143,7 +143,7 @@ class TestTraceIdFilterFields(unittest.TestCase):
         mock_span.parent = None
         # No 'name' attribute
 
-        with patch('rouge.logger.get_current_span', return_value=mock_span):
+        with patch('rouge_ai.logger.get_current_span', return_value=mock_span):
             result = self.filter.filter(self.record)
 
         self.assertTrue(result)
@@ -163,7 +163,7 @@ class TestTraceIdFilterFields(unittest.TestCase):
         mock_span.parent = mock_parent_context
         mock_span.name = "deeply_nested_operation"
 
-        with patch('rouge.logger.get_current_span', return_value=mock_span):
+        with patch('rouge_ai.logger.get_current_span', return_value=mock_span):
             result = self.filter.filter(self.record)
 
         self.assertTrue(result)
@@ -181,7 +181,7 @@ class TestTraceIdFilterFields(unittest.TestCase):
         mock_span.parent = None
         mock_span.name = "test_op"
 
-        with patch('rouge.logger.get_current_span', return_value=mock_span):
+        with patch('rouge_ai.logger.get_current_span', return_value=mock_span):
             result = self.filter.filter(self.record)
 
         self.assertTrue(result)
@@ -207,7 +207,7 @@ class TestTraceIdFilterFields(unittest.TestCase):
         mock_span.parent = mock_parent_context
         mock_span.name = "format_test"
 
-        with patch('rouge.logger.get_current_span', return_value=mock_span):
+        with patch('rouge_ai.logger.get_current_span', return_value=mock_span):
             result = self.filter.filter(self.record)
 
         self.assertTrue(result)
@@ -234,8 +234,8 @@ class TestLogFormatterFields(unittest.TestCase):
 
     def test_formatter_includes_fields(self):
         """Test that formatter includes parent_span_id and span_name"""
-        from rouge.credentials import CredentialManager
-        from rouge.logger import RougeLogger
+        from rouge_ai.credentials import CredentialManager
+        from rouge_ai.logger import RougeLogger
 
         with patch.object(CredentialManager,
                           'get_credentials',
@@ -262,8 +262,8 @@ class TestLogFormatterFields(unittest.TestCase):
 
     def test_formatted_log_message_structure(self):
         """Test that a formatted log message has the correct structure"""
-        from rouge.credentials import CredentialManager
-        from rouge.logger import RougeLogger
+        from rouge_ai.credentials import CredentialManager
+        from rouge_ai.logger import RougeLogger
 
         with patch.object(CredentialManager,
                           'get_credentials',
@@ -323,7 +323,7 @@ class TestSpanEventHandlerFields(unittest.TestCase):
         """Test that log events added to spans include parent_span_id and
         span_name
         """
-        from rouge.logger import SpanEventHandler
+        from rouge_ai.logger import SpanEventHandler
 
         handler = SpanEventHandler()
 
@@ -347,7 +347,7 @@ class TestSpanEventHandlerFields(unittest.TestCase):
         record.service_name = "test-service"
         record.environment = "test"
 
-        with patch('rouge.logger.get_current_span', return_value=mock_span):
+        with patch('rouge_ai.logger.get_current_span', return_value=mock_span):
             handler.emit(record)
 
         # Verify add_event was called

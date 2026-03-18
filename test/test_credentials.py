@@ -4,8 +4,8 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, patch
 
-from rouge.config import RougeConfig
-from rouge.credentials import CredentialManager
+from rouge_ai.config import RougeConfig
+from rouge_ai.credentials import CredentialManager
 
 
 class TestCredentialManager(unittest.TestCase):
@@ -31,7 +31,7 @@ class TestCredentialManager(unittest.TestCase):
         credentials = manager.get_credentials()
         self.assertIsNone(credentials)
 
-    @patch('rouge.credentials.requests.get')
+    @patch('rouge_ai.credentials.requests.get')
     def test_credential_fetching_and_config_update(self, mock_get):
         """Test that credentials are fetched and config is updated"""
         initial_time = datetime.now(timezone.utc)

@@ -1,6 +1,6 @@
 """LLM Provider Auto-Instrumentation for Rouge"""
 
-from rouge.config import RougeConfig
+from rouge_ai.config import RougeConfig
 
 
 def instrument_llm(config: RougeConfig) -> None:
@@ -66,12 +66,16 @@ def instrument_llm(config: RougeConfig) -> None:
     _instrument("Replicate", "opentelemetry.instrumentation.replicate",
                 "ReplicateInstrumentor")
 
-    # 8. Google Generative AI
+    # 8. Google Generative AI (Legacy)
     _instrument("GoogleGenerativeAI",
                 "opentelemetry.instrumentation.google_generativeai",
                 "GoogleGenerativeAiInstrumentor")
 
-    # 9. LangChain
+    # 9. Google GenAI (Modern)
+    _instrument("GoogleGenAI", "opentelemetry.instrumentation.google_genai",
+                "GoogleGenAiInstrumentor")
+
+    # 10. LangChain
     _instrument("LangChain", "opentelemetry.instrumentation.langchain",
                 "LangChainInstrumentor")
 
