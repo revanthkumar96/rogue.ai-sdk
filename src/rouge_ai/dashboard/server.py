@@ -133,7 +133,7 @@ if os.path.exists(STATIC_DIR) and os.listdir(STATIC_DIR):
             index_file = os.path.join(STATIC_DIR, "index.html")
             if os.path.exists(index_file):
                 return FileResponse(index_file)
-        
+
         # If it looks like a file but doesn't exist, return 404
         return HTMLResponse("File not found", status_code=404)
 else:
