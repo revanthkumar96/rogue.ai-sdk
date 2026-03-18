@@ -46,8 +46,10 @@ def run_test():
     print()
 
     print("Running Demo App...")
+    # Pipe "exit" to the interactive main.py to finish the initial test call
     demo_proc = subprocess.run(
         ["uv", "run", "python", "main.py"],
+        input="exit\n",
         cwd="c:/Users/sudik/OneDrive/Desktop/Rouge.ai/rouge.ai/demo_app",
         capture_output=True,
         text=True
@@ -55,9 +57,22 @@ def run_test():
     
     print("Demo App Output:")
     print(demo_proc.stdout)
-    if demo_proc.stderr:
-        print("Demo App Errors:")
-        print(demo_proc.stderr)
+    
+    print("Verifying Dashboard Static MIME fix...")
+    try:
+        # Request a non-existent asset to ensure it returns 404, not 200 (index.html)
+        resp = requests.get("http://127.0.0.1:10108/assets/non-existent.js")
+        if resp.status_code == 404:
+            print("SUCCESS: Non-existent JS returns 404 (prevents MIME errors).")
+        else:
+            print(f"WARNING: Static fallback still aggressive. Got {resp.status_code}")
+            
+        # Request index.html
+        resp = requests.get("http://127.0.0.1:10108/")
+        if resp.status_code == 200 and "<!doctype html>" in resp.text.lower():
+            print("SUCCESS: Index.html served correctly.")
+    except Exception as e:
+        print(f"Static verification failed: {e}")
         
     print("Waiting for spans to be exported (batching)...")
     time.sleep(5)

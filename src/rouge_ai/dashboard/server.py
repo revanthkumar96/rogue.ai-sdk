@@ -127,11 +127,15 @@ if os.path.exists(STATIC_DIR) and os.listdir(STATIC_DIR):
         if os.path.isfile(file_path):
             return FileResponse(file_path)
 
-        # Fallback to index.html for SPA routing
-        index_file = os.path.join(STATIC_DIR, "index.html")
-        if os.path.exists(index_file):
-            return FileResponse(index_file)
-        return HTMLResponse("Frontend not built. Please run build process.")
+        # Fallback to index.html for SPA routing (only for non-file paths)
+        # This prevents returning HTML for a missing .js file (MIME error)
+        if "." not in full_path.split("/")[-1]:
+            index_file = os.path.join(STATIC_DIR, "index.html")
+            if os.path.exists(index_file):
+                return FileResponse(index_file)
+        
+        # If it looks like a file but doesn't exist, return 404
+        return HTMLResponse("File not found", status_code=404)
 else:
 
     @app.get("/")
