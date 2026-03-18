@@ -6,8 +6,8 @@ from unittest.mock import Mock, patch
 
 import requests
 
-from rouge.config import RougeConfig
-from rouge.logger import RougeLogger
+from rouge_ai.config import RougeConfig
+from rouge_ai.logger import RougeLogger
 
 
 class TestCredentialRefresh(unittest.TestCase):
@@ -18,7 +18,7 @@ class TestCredentialRefresh(unittest.TestCase):
         self.config = RougeConfig(service_name="test-service",
                                   github_owner="test-owner",
                                   github_repo_name="test-repo",
-                                  github_commit_hash="abc123",
+                                  github_commit_hash="abc1234",
                                   token="test-token",
                                   aws_region="us-east-1",
                                   local_mode=True,
@@ -51,7 +51,7 @@ class TestCredentialRefresh(unittest.TestCase):
         mock_response.json.return_value = mock_credentials
         mock_response.raise_for_status.return_value = None
 
-        with patch('rouge.credentials.requests.get',
+        with patch('rouge_ai.credentials.requests.get',
                    return_value=mock_response) as mock_get:
             # First call should make an HTTP request
             result1 = self.logger.credential_manager.get_credentials()
@@ -103,7 +103,7 @@ class TestCredentialRefresh(unittest.TestCase):
         mock_response.json.return_value = new_credentials
         mock_response.raise_for_status.return_value = None
 
-        with patch('rouge.credentials.requests.get',
+        with patch('rouge_ai.credentials.requests.get',
                    return_value=mock_response):
             # Should refresh credentials because they expire in 20 minutes
             # (< 30 minute threshold)
@@ -127,7 +127,7 @@ class TestCredentialRefresh(unittest.TestCase):
         }
         self.logger.credential_manager._credentials_expiry = future_time
 
-        with patch('rouge.credentials.requests.get') as mock_get:
+        with patch('rouge_ai.credentials.requests.get') as mock_get:
             # Should use cached credentials without making HTTP request
             result = self.logger.credential_manager.get_credentials()
             mock_get.assert_not_called()
@@ -171,7 +171,7 @@ class TestCredentialRefresh(unittest.TestCase):
         mock_response.json.return_value = new_credentials
         mock_response.raise_for_status.return_value = None
 
-        with patch('rouge.credentials.requests.get',
+        with patch('rouge_ai.credentials.requests.get',
                    return_value=mock_response) as mock_get:
             # Force refresh should bypass cache and make HTTP request
             result = self.logger.credential_manager.get_credentials(
@@ -181,7 +181,7 @@ class TestCredentialRefresh(unittest.TestCase):
 
     def test_fetch_aws_credentials_http_error(self):
         """Test handling of HTTP errors during credential fetch"""
-        with patch('rouge.credentials.requests.get') as mock_get:
+        with patch('rouge_ai.credentials.requests.get') as mock_get:
             # Mock HTTP error
             mock_get.side_effect = requests.RequestException("Network error")
 
@@ -204,7 +204,7 @@ class TestCredentialRefresh(unittest.TestCase):
         self.logger.credential_manager._cached_credentials = cached_creds
         self.logger.credential_manager._credentials_expiry = future_time
 
-        with patch('rouge.credentials.requests.get') as mock_get:
+        with patch('rouge_ai.credentials.requests.get') as mock_get:
             # Mock HTTP error
             mock_get.side_effect = requests.RequestException("Network error")
 
@@ -237,7 +237,7 @@ class TestCredentialRefresh(unittest.TestCase):
         mock_response.json.return_value = mock_credentials
         mock_response.raise_for_status.return_value = None
 
-        with patch('rouge.credentials.requests.get',
+        with patch('rouge_ai.credentials.requests.get',
                    return_value=mock_response), \
              patch.object(self.logger,
                           '_create_cloudwatch_handler') as mock_create:
@@ -252,7 +252,7 @@ class TestCredentialRefresh(unittest.TestCase):
 
     def test_refresh_credentials_failure(self):
         """Test failed manual credential refresh"""
-        with patch('rouge.credentials.requests.get') as mock_get:
+        with patch('rouge_ai.credentials.requests.get') as mock_get:
             # Mock HTTP error
             mock_get.side_effect = requests.RequestException("Network error")
 
@@ -265,7 +265,7 @@ class TestCredentialRefresh(unittest.TestCase):
         """
         self.logger.config.local_mode = True
 
-        with patch('rouge.credentials.requests.get') as mock_get, \
+        with patch('rouge_ai.credentials.requests.get') as mock_get, \
              patch.object(self.logger,
                           '_setup_cloudwatch_handler') as mock_setup:
 
@@ -362,7 +362,7 @@ class TestCredentialRefresh(unittest.TestCase):
         mock_response.json.return_value = mock_credentials
         mock_response.raise_for_status.return_value = None
 
-        with patch('rouge.credentials.requests.get',
+        with patch('rouge_ai.credentials.requests.get',
                    return_value=mock_response):
             result = self.logger.credential_manager.get_credentials()
             # Should successfully parse the expiration time and cache it
@@ -386,7 +386,7 @@ class TestCredentialRefresh(unittest.TestCase):
         mock_response.json.return_value = mock_credentials
         mock_response.raise_for_status.return_value = None
 
-        with patch('rouge.credentials.requests.get',
+        with patch('rouge_ai.credentials.requests.get',
                    return_value=mock_response):
             self.logger.credential_manager.get_credentials()
             # Should set fallback expiration (12 hours from now)
@@ -419,7 +419,7 @@ class TestCredentialRefresh(unittest.TestCase):
         mock_response.json.return_value = mock_credentials
         mock_response.raise_for_status.return_value = None
 
-        with patch('rouge.credentials.requests.get',
+        with patch('rouge_ai.credentials.requests.get',
                    return_value=mock_response):
             # This should not raise the "can't compare offset-naive
             # and offset-aware datetimes" error
@@ -464,7 +464,7 @@ class TestCredentialRefresh(unittest.TestCase):
                 mock_response.json.return_value = mock_credentials
                 mock_response.raise_for_status.return_value = None
 
-                with patch('rouge.credentials.requests.get',
+                with patch('rouge_ai.credentials.requests.get',
                            return_value=mock_response):
                     # Clear previous cached credentials
                     self.logger.credential_manager._cached_credentials = None

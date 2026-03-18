@@ -3,7 +3,7 @@ from typing import Any
 
 import yaml
 
-from rouge.utils.io import list_parent_folders, list_sub_folders
+from rouge_ai.utils.io import list_parent_folders, list_sub_folders
 
 
 def find_rouge_config() -> dict[str, Any] | None:
@@ -14,7 +14,7 @@ def find_rouge_config() -> dict[str, Any] | None:
     Returns:
         Dictionary containing the configuration, or None if no file found.
     """
-    config_filename = ".rouge-config.yaml"
+    config_filename = ".rouge_ai-config.yaml"
 
     # Check current working directory
     current_path = Path.cwd()

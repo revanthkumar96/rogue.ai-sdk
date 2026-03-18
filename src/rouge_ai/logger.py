@@ -10,8 +10,8 @@ import boto3
 import watchtower
 from opentelemetry.trace import get_current_span
 
-from rouge.config import RougeConfig
-from rouge.credentials import CredentialManager
+from rouge_ai.config import RougeConfig
+from rouge_ai.credentials import CredentialManager
 
 
 class SensitiveDataFilter(logging.Filter):
@@ -186,8 +186,8 @@ class TraceIdFilter(logging.Filter):
             # trace
 
             # Skip logging module frames
-            import rouge
-            rouge_dir = os.path.dirname(os.path.abspath(rouge.__file__))
+            import rouge_ai
+            rouge_dir = os.path.dirname(os.path.abspath(rouge_ai.__file__))
             if os.path.abspath(frame_info.filename).startswith(rouge_dir) or \
                ('Lib' in filename and 'logging/' in filename) or \
                filename.startswith('__') or \
@@ -300,7 +300,7 @@ class RougeLogger:
         self.credential_manager = credential_manager or CredentialManager(
             config)
 
-        self.logger = logging.getLogger(f"rouge.{name or config.service_name}")
+        self.logger = logging.getLogger(f"rouge_ai.{name or config.service_name}")
         self.logger.setLevel(logging.DEBUG)
         log_verbose(config, "Logger level set to DEBUG")
 
@@ -711,7 +711,7 @@ def shutdown_logger() -> None:
 def get_logger(name: str | None = None) -> RougeLogger:
     """Get the global logger instance or create a new one"""
     if _global_logger is None:
-        raise RuntimeError("Logger not initialized. Call rouge.init() first.")
+        raise RuntimeError("Logger not initialized. Call rouge_ai.init() first.")
 
     if name is None:
         return _global_logger

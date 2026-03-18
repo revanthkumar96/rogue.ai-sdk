@@ -4,7 +4,7 @@ from unittest.mock import mock_open, patch
 import pytest
 import yaml
 
-from rouge.utils.config import find_rouge_config
+from rouge_ai.utils.config import find_rouge_config
 
 
 def test_find_rouge_config():
@@ -26,8 +26,8 @@ def test_find_rouge_config():
     # Test no config file found
     with patch("pathlib.Path.cwd") as mock_cwd, \
          patch("pathlib.Path.exists", return_value=False), \
-         patch("rouge.utils.config.list_sub_folders", return_value=[]), \
-         patch("rouge.utils.config.list_parent_folders", return_value=[]):
+         patch("rouge_ai.utils.config.list_sub_folders", return_value=[]), \
+         patch("rouge_ai.utils.config.list_parent_folders", return_value=[]):
 
         mock_cwd.return_value = Path("/test/path")
         result = find_rouge_config()

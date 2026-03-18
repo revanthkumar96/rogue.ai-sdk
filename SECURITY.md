@@ -91,7 +91,7 @@ What an attacker could accomplish by exploiting this vulnerability.
 - OS: Ubuntu 22.04
 
 ## Steps to Reproduce
-1. Install Rouge.AI with: pip install rouge
+1. Install Rouge.AI with: pip install rouge-ai
 2. Create a file `exploit.py` with the following code:
    [code here]
 3. Run: python exploit.py
@@ -190,17 +190,17 @@ credentials.json
 **Rouge.AI Configuration:**
 
 ```python
-import rouge
+import rouge_ai
 import os
 
 # ✅ Good - No secrets in code
-rouge.init(
+rouge_ai.init(
     service_name="my-service",
     api_key=os.environ.get("ROUGE_API_KEY"),  # If applicable
 )
 
 # ❌ Bad - Hardcoded secrets
-rouge.init(
+rouge_ai.init(
     service_name="my-service",
     api_key="rouge-1234567890",  # Never hardcode!
 )
@@ -212,7 +212,7 @@ rouge.init(
 
 ```python
 # Ensure HTTPS is used for external telemetry endpoints
-rouge.init(
+rouge_ai.init(
     service_name="my-service",
     exporter_endpoint="https://telemetry.example.com",  # HTTPS, not HTTP
 )
@@ -232,10 +232,10 @@ VERIFY_SSL = os.environ.get("ENV") != "development"
 **Sanitize user input before logging:**
 
 ```python
-import rouge
+import rouge_ai
 import re
 
-logger = rouge.get_logger()
+logger = rouge_ai.get_logger()
 
 def process_user_input(user_input: str):
     # ❌ Bad - Logging raw user input (potential log injection)

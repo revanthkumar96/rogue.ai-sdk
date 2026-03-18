@@ -13,8 +13,8 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import (ConsoleSpanExporter,
                                             SimpleSpanProcessor)
 
-from rouge.config import RougeConfig
-from rouge.logger import TraceIdFilter
+from rouge_ai.config import RougeConfig
+from rouge_ai.logger import TraceIdFilter
 
 
 class TestLoggerWithRealSpans(unittest.TestCase):

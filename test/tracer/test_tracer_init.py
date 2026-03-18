@@ -1,4 +1,4 @@
-"""Tests for rouge initialization behavior"""
+"""Tests for rouge_ai initialization behavior"""
 
 import tempfile
 import unittest
@@ -7,19 +7,19 @@ from unittest.mock import patch
 
 import yaml
 
-import rouge
-import rouge.tracer
-from rouge import init, shutdown
+import rouge_ai
+import rouge_ai.tracer
+from rouge_ai import init, shutdown
 
 
 class TestTracerInitialization(unittest.TestCase):
-    """Test rouge initialization with YAML config and init() overrides"""
+    """Test rouge_ai initialization with YAML config and init() overrides"""
 
     def setUp(self):
         """Reset global state before each test"""
         # Reset global state
-        rouge.tracer._tracer_provider = None
-        rouge.tracer._config = None
+        rouge_ai.tracer._tracer_provider = None
+        rouge_ai.tracer._config = None
         shutdown()
 
     def tearDown(self):
@@ -27,43 +27,44 @@ class TestTracerInitialization(unittest.TestCase):
         shutdown()
 
     def test_yaml_config_loading_on_import(self):
-        """Test that importing rouge loads configuration from YAML file"""
+        """Test that importing rouge_ai loads configuration from YAML file"""
         # Create a temporary YAML config file
         test_config = {
             'service_name': 'test-service-from-yaml',
             'environment': 'test-env',
             'github_owner': 'yaml-owner',
             'github_repo_name': 'yaml-repo',
-            'github_commit_hash': 'abc123yaml'
+            'github_commit_hash': 'abc1234yaml'
         }
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            config_path = Path(temp_dir) / '.rouge-config.yaml'
+            config_path = Path(temp_dir) / '.rouge_ai-config.yaml'
 
             # Write test config to YAML file
             with open(config_path, 'w') as f:
                 yaml.dump(test_config, f)
 
             # Mock Path.cwd() to return our temp directory
-            with patch('rouge.utils.config.Path.cwd',
+            with patch('rouge_ai.utils.config.Path.cwd',
                        return_value=Path(temp_dir)):
-                # Initialize rouge (this should load the YAML config)
+                # Initialize rouge_ai (this should load the YAML config)
                 init()
 
                 # Verify that configuration was loaded from YAML
-                self.assertIsNotNone(rouge.tracer._config)
-                self.assertEqual(rouge.tracer._config.service_name,
+                self.assertIsNotNone(rouge_ai.tracer._config)
+                self.assertEqual(rouge_ai.tracer._config.service_name,
                                  'test-service-from-yaml')
-                self.assertEqual(rouge.tracer._config.environment, 'test-env')
-                self.assertEqual(rouge.tracer._config.github_owner,
+                self.assertEqual(rouge_ai.tracer._config.environment,
+                                 'test-env')
+                self.assertEqual(rouge_ai.tracer._config.github_owner,
                                  'yaml-owner')
-                self.assertEqual(rouge.tracer._config.github_repo_name,
+                self.assertEqual(rouge_ai.tracer._config.github_repo_name,
                                  'yaml-repo')
-                self.assertEqual(rouge.tracer._config.github_commit_hash,
-                                 'abc123yaml')
+                self.assertEqual(rouge_ai.tracer._config.github_commit_hash,
+                                 'abc1234yaml')
 
     def test_init_overrides_yaml_config(self):
-        """Test that rouge.init() parameters override YAML configuration"""
+        """Test that rouge_ai.init() parameters override YAML configuration"""
         # Create a temporary YAML config file
         yaml_config = {
             'service_name': 'yaml-service',
@@ -76,14 +77,14 @@ class TestTracerInitialization(unittest.TestCase):
         }
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            config_path = Path(temp_dir) / '.rouge-config.yaml'
+            config_path = Path(temp_dir) / '.rouge_ai-config.yaml'
 
             # Write YAML config
             with open(config_path, 'w') as f:
                 yaml.dump(yaml_config, f)
 
             # Mock Path.cwd() to return our temp directory
-            with patch('rouge.utils.config.Path.cwd',
+            with patch('rouge_ai.utils.config.Path.cwd',
                        return_value=Path(temp_dir)):
                 # Initialize with override parameters
                 _ = init(service_name='override-service',
@@ -93,27 +94,28 @@ class TestTracerInitialization(unittest.TestCase):
                          enable_log_cloud_export=False)
 
                 # Verify that init() parameters override YAML values
-                self.assertIsNotNone(rouge.tracer._config)
-                self.assertEqual(rouge.tracer._config.service_name,
+                self.assertIsNotNone(rouge_ai.tracer._config)
+                self.assertEqual(rouge_ai.tracer._config.service_name,
                                  'override-service')  # Overridden
-                self.assertEqual(rouge.tracer._config.environment,
+                self.assertEqual(rouge_ai.tracer._config.environment,
                                  'override-env')  # Overridden
-                self.assertEqual(rouge.tracer._config.github_owner,
+                self.assertEqual(rouge_ai.tracer._config.github_owner,
                                  'yaml-owner')  # From YAML
-                self.assertEqual(rouge.tracer._config.github_repo_name,
+                self.assertEqual(rouge_ai.tracer._config.github_repo_name,
                                  'yaml-repo')  # From YAML
-                self.assertEqual(rouge.tracer._config.github_commit_hash,
+                self.assertEqual(rouge_ai.tracer._config.github_commit_hash,
                                  'overridecommit456')  # Overridden
-                self.assertEqual(rouge.tracer._config.token,
+                self.assertEqual(rouge_ai.tracer._config.token,
                                  'override-token-456')  # Overridden
-                self.assertEqual(rouge.tracer._config.enable_log_cloud_export,
-                                 False)  # Overridden
+                self.assertEqual(
+                    rouge_ai.tracer._config.enable_log_cloud_export,
+                    False)  # Overridden
 
     def test_init_without_yaml_config(self):
-        """Test that rouge.init() works without YAML configuration"""
+        """Test that rouge_ai.init() works without YAML configuration"""
         with tempfile.TemporaryDirectory() as temp_dir:
             # Mock Path.cwd() to return temp directory (no YAML file)
-            with patch('rouge.utils.config.Path.cwd',
+            with patch('rouge_ai.utils.config.Path.cwd',
                        return_value=Path(temp_dir)):
                 # Initialize with only init() parameters
                 _ = init(service_name='init-only-service',
@@ -123,16 +125,16 @@ class TestTracerInitialization(unittest.TestCase):
                          github_commit_hash='initcommit789')
 
                 # Verify that configuration comes from init() parameters only
-                self.assertIsNotNone(rouge.tracer._config)
-                self.assertEqual(rouge.tracer._config.service_name,
+                self.assertIsNotNone(rouge_ai.tracer._config)
+                self.assertEqual(rouge_ai.tracer._config.service_name,
                                  'init-only-service')
-                self.assertEqual(rouge.tracer._config.environment,
+                self.assertEqual(rouge_ai.tracer._config.environment,
                                  'init-only-env')
-                self.assertEqual(rouge.tracer._config.github_owner,
+                self.assertEqual(rouge_ai.tracer._config.github_owner,
                                  'init-owner')
-                self.assertEqual(rouge.tracer._config.github_repo_name,
+                self.assertEqual(rouge_ai.tracer._config.github_repo_name,
                                  'init-repo')
-                self.assertEqual(rouge.tracer._config.github_commit_hash,
+                self.assertEqual(rouge_ai.tracer._config.github_commit_hash,
                                  'initcommit789')
 
     def test_multiple_init_calls_with_same_params(self):
@@ -140,7 +142,7 @@ class TestTracerInitialization(unittest.TestCase):
         return the same tracer provider
         """
         with tempfile.TemporaryDirectory() as temp_dir:
-            with patch('rouge.utils.config.Path.cwd',
+            with patch('rouge_ai.utils.config.Path.cwd',
                        return_value=Path(temp_dir)):
                 # First init call
                 tracer_provider1 = init(service_name='test-service',
@@ -156,13 +158,13 @@ class TestTracerInitialization(unittest.TestCase):
                 self.assertIs(tracer_provider1, tracer_provider2)
 
                 # Configuration should remain from first call
-                self.assertEqual(rouge.tracer._config.service_name,
+                self.assertEqual(rouge_ai.tracer._config.service_name,
                                  'test-service')
 
     def test_multiple_init_calls_with_different_params(self):
         """Test that init() calls with different parameters reinitialize"""
         with tempfile.TemporaryDirectory() as temp_dir:
-            with patch('rouge.utils.config.Path.cwd',
+            with patch('rouge_ai.utils.config.Path.cwd',
                        return_value=Path(temp_dir)):
                 # First init call
                 tracer_provider1 = init(service_name='test-service',
@@ -182,7 +184,7 @@ class TestTracerInitialization(unittest.TestCase):
                 self.assertIsNot(tracer_provider1, tracer_provider2)
 
                 # Configuration should be updated to new values
-                self.assertEqual(rouge.tracer._config.service_name,
+                self.assertEqual(rouge_ai.tracer._config.service_name,
                                  'different-service')
 
     def test_reinitialization_with_overrides(self):
@@ -200,24 +202,25 @@ class TestTracerInitialization(unittest.TestCase):
         }
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            config_path = Path(temp_dir) / '.rouge-config.yaml'
+            config_path = Path(temp_dir) / '.rouge_ai-config.yaml'
 
             # Write YAML config
             with open(config_path, 'w') as f:
                 yaml.dump(yaml_config, f)
 
             # Mock Path.cwd() to return our temp directory
-            with patch('rouge.utils.config.Path.cwd',
+            with patch('rouge_ai.utils.config.Path.cwd',
                        return_value=Path(temp_dir)):
                 # First initialization (YAML only)
                 tracer_provider1 = init()
 
                 # Verify initial config from YAML
-                self.assertIsNotNone(rouge.tracer._config)
-                self.assertEqual(rouge.tracer._config.service_name,
+                self.assertIsNotNone(rouge_ai.tracer._config)
+                self.assertEqual(rouge_ai.tracer._config.service_name,
                                  'yaml-service')
-                self.assertEqual(rouge.tracer._config.token, 'yaml-token')
-                self.assertEqual(rouge.tracer._config.environment, 'yaml-env')
+                self.assertEqual(rouge_ai.tracer._config.token, 'yaml-token')
+                self.assertEqual(rouge_ai.tracer._config.environment,
+                                 'yaml-env')
 
                 # Second initialization with overrides
                 # - this should reinitialize
@@ -226,14 +229,14 @@ class TestTracerInitialization(unittest.TestCase):
                                         environment='reinitialized-env')
 
                 # Verify that configuration was updated with overrides
-                self.assertIsNotNone(rouge.tracer._config)
-                self.assertEqual(rouge.tracer._config.service_name,
+                self.assertIsNotNone(rouge_ai.tracer._config)
+                self.assertEqual(rouge_ai.tracer._config.service_name,
                                  'reinitialized-service')  # Overridden
-                self.assertEqual(rouge.tracer._config.token,
+                self.assertEqual(rouge_ai.tracer._config.token,
                                  'reinitialized-token')  # Overridden
-                self.assertEqual(rouge.tracer._config.environment,
+                self.assertEqual(rouge_ai.tracer._config.environment,
                                  'reinitialized-env')  # Overridden
-                self.assertEqual(rouge.tracer._config.github_owner,
+                self.assertEqual(rouge_ai.tracer._config.github_owner,
                                  'yaml-owner')  # From YAML
 
                 # Should return new tracer provider

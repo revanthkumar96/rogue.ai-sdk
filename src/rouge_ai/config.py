@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from rouge.constants import DEFAULT_VERIFICATION_ENDPOINT
+from rouge_ai.constants import DEFAULT_VERIFICATION_ENDPOINT
 
 
 @dataclass
@@ -12,9 +12,9 @@ class RougeConfig:
     service_name: str
 
     # GitHub Identification
-    github_owner: str
-    github_repo_name: str
-    github_commit_hash: str
+    github_owner: str | None = None
+    github_repo_name: str | None = None
+    github_commit_hash: str | None = None
 
     # Token for Rouge API
     token: str | None = None
@@ -23,6 +23,9 @@ class RougeConfig:
     name: str | None = None
 
     # AWS Configuration
+    aws_access_key_id: str | None = None
+    aws_secret_access_key: str | None = None
+    aws_session_token: str | None = None
     aws_region: str = "us-west-2"
 
     # OpenTelemetry Configuration

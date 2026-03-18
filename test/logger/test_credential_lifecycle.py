@@ -4,9 +4,9 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, Mock, patch
 
-import rouge.logger
-from rouge.config import RougeConfig
-from rouge.logger import RougeLogger
+import rouge_ai.logger
+from rouge_ai.config import RougeConfig
+from rouge_ai.logger import RougeLogger
 
 
 class TestCredentialLifecycle(unittest.TestCase):
@@ -24,13 +24,13 @@ class TestCredentialLifecycle(unittest.TestCase):
                                   token="test-token")
 
         # Clear any existing global handler reference
-        rouge.logger._cloudwatch_handler = None
+        rouge_ai.logger._cloudwatch_handler = None
 
     def tearDown(self):
         """Clean up after tests"""
-        rouge.logger._cloudwatch_handler = None
+        rouge_ai.logger._cloudwatch_handler = None
 
-    @patch('rouge.logger.watchtower.CloudWatchLogHandler')
+    @patch('rouge_ai.logger.watchtower.CloudWatchLogHandler')
     @patch('boto3.Session')
     @patch('logging.getLogger')
     def test_full_credential_lifecycle_with_handler_recreation(
@@ -95,7 +95,7 @@ class TestCredentialLifecycle(unittest.TestCase):
         mock_logger = MagicMock()
         mock_get_logger.return_value = mock_logger
 
-        with patch('rouge.credentials.requests.get') as mock_get:
+        with patch('rouge_ai.credentials.requests.get') as mock_get:
 
             # 6. Set up initial HTTP response
             mock_get.return_value = initial_response
@@ -117,7 +117,8 @@ class TestCredentialLifecycle(unittest.TestCase):
             # Verify initial CloudWatch handler was
             # created and is referenced globally
             self.assertEqual(mock_cloudwatch_handler_class.call_count, 1)
-            self.assertEqual(rouge.logger._cloudwatch_handler, initial_handler)
+            self.assertEqual(rouge_ai.logger._cloudwatch_handler,
+                             initial_handler)
 
             # 9. Simulate time progression by directly
             # modifying expiration time
@@ -163,10 +164,10 @@ class TestCredentialLifecycle(unittest.TestCase):
 
             # 15. Verify global handler reference was updated
             self.assertEqual(
-                rouge.logger._cloudwatch_handler, new_handler,
+                rouge_ai.logger._cloudwatch_handler, new_handler,
                 "Global handler reference should point to new handler")
 
-    @patch('rouge.logger.watchtower.CloudWatchLogHandler')
+    @patch('rouge_ai.logger.watchtower.CloudWatchLogHandler')
     @patch('boto3.Session')
     def test_credential_refresh_without_cloudwatch_when_log_export_disabled(
             self, mock_boto_session, mock_cloudwatch_handler_class):
@@ -230,7 +231,7 @@ class TestCredentialLifecycle(unittest.TestCase):
         new_response.json.return_value = new_credentials
         new_response.raise_for_status.return_value = None
 
-        with patch('rouge.credentials.requests.get') as mock_get, \
+        with patch('rouge_ai.credentials.requests.get') as mock_get, \
              patch('logging.getLogger') as mock_get_logger:
 
             # Mock the underlying logger for non-CloudWatch case
@@ -271,7 +272,7 @@ class TestCredentialLifecycle(unittest.TestCase):
             # Verify no CloudWatch handler operations occurred
             self.assertEqual(mock_cloudwatch_handler_class.call_count, 0)
 
-    @patch('rouge.logger.watchtower.CloudWatchLogHandler')
+    @patch('rouge_ai.logger.watchtower.CloudWatchLogHandler')
     @patch('boto3.Session')
     def test_credential_refresh_failure_handling(
             self, mock_boto_session, mock_cloudwatch_handler_class):
@@ -309,7 +310,7 @@ class TestCredentialLifecycle(unittest.TestCase):
         initial_handler.level = 0  # Set level for logging compatibility
         mock_cloudwatch_handler_class.return_value = initial_handler
 
-        with patch('rouge.credentials.requests.get') as mock_get, \
+        with patch('rouge_ai.credentials.requests.get') as mock_get, \
              patch('logging.getLogger') as mock_get_logger:
 
             # Mock the underlying logger
@@ -325,7 +326,8 @@ class TestCredentialLifecycle(unittest.TestCase):
             credentials = logger.credential_manager.get_credentials()
             self.assertEqual(credentials['aws_access_key_id'],
                              'INITIAL_KEY_123')
-            self.assertEqual(rouge.logger._cloudwatch_handler, initial_handler)
+            self.assertEqual(rouge_ai.logger._cloudwatch_handler,
+                             initial_handler)
 
             # Simulate time progression - set credentials to expire soon
             logger.credential_manager._credentials_expiry = datetime.now(
@@ -348,7 +350,8 @@ class TestCredentialLifecycle(unittest.TestCase):
                              'INITIAL_KEY_123')
 
             # Verify handler wasn't changed due to failure
-            self.assertEqual(rouge.logger._cloudwatch_handler, initial_handler)
+            self.assertEqual(rouge_ai.logger._cloudwatch_handler,
+                             initial_handler)
 
             # Verify logging still works despite credential refresh failure
             self.assertTrue(True)  # If we get here, no exception was raised
@@ -372,7 +375,7 @@ class TestCredentialLifecycle(unittest.TestCase):
             local_mode=True,  # Local mode enabled
             token="test-token")
 
-        with patch('rouge.credentials.requests.get') as mock_get:
+        with patch('rouge_ai.credentials.requests.get') as mock_get:
             # Create logger in local mode
             logger = RougeLogger(config)
 

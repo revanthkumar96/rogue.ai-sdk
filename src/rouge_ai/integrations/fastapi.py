@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.trace import Span
 
-from rouge.tracer import get_config, get_tracer_provider
+from rouge_ai.tracer import get_config, get_tracer_provider
 
 # SECURITY: Sensitive headers that should be redacted
 SENSITIVE_HEADERS = {
@@ -134,19 +134,19 @@ def connect_fastapi(app: FastAPI) -> None:
         app: FastAPI application instance
 
     Example:
-        import rouge
+        import rouge_ai
         from fastapi import FastAPI
-        from rouge import connect_fastapi
+        from rouge_ai import connect_fastapi
 
         app = FastAPI()
-        rouge.init()
+        rouge_ai.init()
         connect_fastapi(app)
     """
     provider = get_tracer_provider()
     config = get_config()
 
     if provider is None:
-        raise RuntimeError("Tracing not initialized. Call rouge.init() first.")
+        raise RuntimeError("Tracing not initialized. Call rouge_ai.init() first.")
 
     if config is None:
         raise RuntimeError("Configuration not available.")

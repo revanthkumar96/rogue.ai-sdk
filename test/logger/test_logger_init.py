@@ -7,8 +7,8 @@ from unittest.mock import patch
 
 import yaml
 
-from rouge import init, shutdown
-from rouge.logger import get_logger, shutdown_logger
+from rouge_ai import init, shutdown
+from rouge_ai.logger import get_logger, shutdown_logger
 
 
 class TestLoggerInitialization(unittest.TestCase):
@@ -41,16 +41,16 @@ class TestLoggerInitialization(unittest.TestCase):
         }
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            config_path = Path(temp_dir) / '.rouge-config.yaml'
+            config_path = Path(temp_dir) / '.rouge_ai-config.yaml'
 
             # Write test config to YAML file
             with open(config_path, 'w') as f:
                 yaml.dump(test_config, f)
 
             # Mock Path.cwd() to return our temp directory
-            with patch('rouge.utils.config.Path.cwd',
+            with patch('rouge_ai.utils.config.Path.cwd',
                        return_value=Path(temp_dir)):
-                # Initialize rouge (this should load YAML config
+                # Initialize rouge_ai (this should load YAML config
                 # and init logger)
                 init()
 
@@ -69,7 +69,7 @@ class TestLoggerInitialization(unittest.TestCase):
                 self.assertEqual(logger.config.aws_region, 'us-west-2')
 
     def test_init_overrides_affect_logger_config(self):
-        """Test that rouge.init() parameters override YAML for logger"""
+        """Test that rouge_ai.init() parameters override YAML for logger"""
         # Create a temporary YAML config file
         yaml_config = {
             'service_name': 'yaml-logger-service',
@@ -82,14 +82,14 @@ class TestLoggerInitialization(unittest.TestCase):
         }
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            config_path = Path(temp_dir) / '.rouge-config.yaml'
+            config_path = Path(temp_dir) / '.rouge_ai-config.yaml'
 
             # Write YAML config
             with open(config_path, 'w') as f:
                 yaml.dump(yaml_config, f)
 
             # Mock Path.cwd() to return our temp directory
-            with patch('rouge.utils.config.Path.cwd',
+            with patch('rouge_ai.utils.config.Path.cwd',
                        return_value=Path(temp_dir)):
                 # Initialize with override parameters
                 init(service_name='override-logger-service',
@@ -120,7 +120,7 @@ class TestLoggerInitialization(unittest.TestCase):
         """Test that logger initialization works without YAML configuration"""
         with tempfile.TemporaryDirectory() as temp_dir:
             # Mock Path.cwd() to return temp directory (no YAML file)
-            with patch('rouge.utils.config.Path.cwd',
+            with patch('rouge_ai.utils.config.Path.cwd',
                        return_value=Path(temp_dir)):
                 # Initialize with only init() parameters
                 init(service_name='logger-init-only',
@@ -158,14 +158,14 @@ class TestLoggerInitialization(unittest.TestCase):
             get_logger()
 
         self.assertIn("Logger not initialized", str(context.exception))
-        self.assertIn("Call rouge.init() first", str(context.exception))
+        self.assertIn("Call rouge_ai.init() first", str(context.exception))
 
     def test_get_logger_with_custom_name(self):
         """Test getting logger with custom name after initialization"""
         with tempfile.TemporaryDirectory() as temp_dir:
-            with patch('rouge.utils.config.Path.cwd',
+            with patch('rouge_ai.utils.config.Path.cwd',
                        return_value=Path(temp_dir)):
-                # Initialize rouge
+                # Initialize rouge_ai
                 init(service_name='test-service',
                      github_owner='test-owner',
                      github_repo_name='test-repo',
@@ -183,7 +183,7 @@ class TestLoggerInitialization(unittest.TestCase):
                 self.assertNotEqual(default_logger.logger.name,
                                     custom_logger.logger.name)
                 self.assertEqual(custom_logger.logger.name,
-                                 'rouge.custom-logger')
+                                 'rouge_ai.custom-logger')
 
     def test_logger_cloud_export_configuration(self):
         """Test that enable_log_cloud_export setting is properly configured"""
@@ -204,7 +204,7 @@ class TestLoggerInitialization(unittest.TestCase):
         for case in test_cases:
             with self.subTest(case=case):
                 with tempfile.TemporaryDirectory() as temp_dir:
-                    config_path = Path(temp_dir) / '.rouge-config.yaml'
+                    config_path = Path(temp_dir) / '.rouge_ai-config.yaml'
 
                     # Write test config to YAML file
                     with open(config_path, 'w') as f:
@@ -214,7 +214,7 @@ class TestLoggerInitialization(unittest.TestCase):
                     shutdown()
                     shutdown_logger()
 
-                    with patch('rouge.utils.config.Path.cwd',
+                    with patch('rouge_ai.utils.config.Path.cwd',
                                return_value=Path(temp_dir)):
                         # Initialize with YAML config
                         init()

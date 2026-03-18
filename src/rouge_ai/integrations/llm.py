@@ -1,6 +1,6 @@
 """LLM Provider Auto-Instrumentation for Rouge"""
 
-from rouge.config import RougeConfig
+from rouge_ai.config import RougeConfig
 
 
 def instrument_llm(config: RougeConfig) -> None:

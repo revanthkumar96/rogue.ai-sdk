@@ -131,7 +131,7 @@ Verify your setup is working correctly:
 
 - [ ] Virtual environment is activated
 - [ ] `python --version` shows Python 3.11+
-- [ ] `pip show rouge` displays package information
+- [ ] `pip show rouge-ai` displays package information
 - [ ] `pre-commit run --all-files` completes without errors
 - [ ] `pytest test` runs (even if some tests fail initially)
 
@@ -201,13 +201,13 @@ pytest test
 pytest test/test_llm_config.py
 
 # Run with coverage
-pytest test --cov=rouge --cov-report=html
+pytest test --cov=rouge_ai --cov-report=html
 
 # Run pre-commit checks
 pre-commit run --all-files
 
 # Run on specific files
-pre-commit run --files rouge/core/tracer.py
+pre-commit run --files src/rouge_ai/tracer.py
 ```
 
 ______________________________________________________________________
@@ -235,7 +235,7 @@ Include the following information:
 **Actual Behavior**: What actually happens
 
 **Environment**:
-- Rouge.AI version: [e.g., 0.0.1]
+- Rouge.AI version: [e.g., 0.0.7]
 - Python version: [e.g., 3.11.5]
 - OS: [e.g., Ubuntu 22.04]
 - LLM provider: [e.g., OpenAI 1.12.0]
@@ -489,29 +489,24 @@ Quality tests are essential for maintaining Rouge.AI's reliability.
 ```python
 # test/test_feature.py
 import pytest
-from rouge import SomeFeature
+from rouge_ai import TraceOptions
 
 class TestSomeFeature:
     """Test suite for SomeFeature functionality."""
 
     def test_basic_functionality(self):
         """Test that basic feature works as expected."""
-        feature = SomeFeature()
-        result = feature.process("input")
-        assert result == "expected_output"
+        config = TraceOptions()
+        # ... test logic
 
     def test_edge_case_empty_input(self):
         """Test handling of empty input."""
-        feature = SomeFeature()
-        with pytest.raises(ValueError):
-            feature.process("")
+        # ... test logic
 
     @pytest.mark.asyncio
     async def test_async_operation(self):
         """Test async functionality."""
-        feature = SomeFeature()
-        result = await feature.async_process("input")
-        assert result is not None
+        # ... test logic
 ```
 
 ### Test Organization
@@ -541,7 +536,7 @@ pytest test/test_llm_config.py
 pytest test/test_llm_config.py::test_provider_detection
 
 # Run with coverage report
-pytest test --cov=rouge --cov-report=html
+pytest test --cov=rouge_ai --cov-report=html
 
 # Run only failed tests from last run
 pytest --lf
@@ -773,7 +768,7 @@ Pre-commit hooks automatically format your code:
 pre-commit run --all-files
 
 # Run on specific files
-pre-commit run --files rouge/core/tracer.py test/test_tracing.py
+pre-commit run --files src/rouge_ai/tracer.py test/tracer/test_tracer.py
 ```
 
 ### Key Style Points
@@ -797,8 +792,8 @@ import pytest
 from opentelemetry import trace
 
 # Local application imports
-from rouge.core import Tracer
-from rouge.config import Config
+from rouge_ai.tracer import TraceOptions
+from rouge_ai.config import RougeConfig
 ```
 
 ______________________________________________________________________

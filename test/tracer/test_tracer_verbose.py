@@ -5,8 +5,8 @@ import os
 import unittest
 from contextlib import redirect_stdout
 
-import rouge
-from rouge import tracer
+import rouge_ai
+from rouge_ai import tracer
 
 
 class TestTracerVerbose(unittest.TestCase):
@@ -42,14 +42,14 @@ class TestTracerVerbose(unittest.TestCase):
         os.environ['ROUGE_SERVICE_NAME'] = 'test-service'
         os.environ['ROUGE_GITHUB_OWNER'] = 'test-owner'
         os.environ['ROUGE_GITHUB_REPO_NAME'] = 'test-repo'
-        os.environ['ROUGE_GITHUB_COMMIT_HASH'] = 'abc123'
+        os.environ['ROUGE_GITHUB_COMMIT_HASH'] = 'abc1234'
 
         # Capture stdout to check for verbose output
         captured_output = io.StringIO()
 
         with redirect_stdout(captured_output):
-            # Initialize rouge with verbose logging enabled
-            rouge.init()
+            # Initialize rouge_ai with verbose logging enabled
+            rouge_ai.init()
 
             # Get the config to verify tracer_verbose is True
             config = tracer.get_config()
@@ -70,14 +70,14 @@ class TestTracerVerbose(unittest.TestCase):
         os.environ['ROUGE_SERVICE_NAME'] = 'test-service'
         os.environ['ROUGE_GITHUB_OWNER'] = 'test-owner'
         os.environ['ROUGE_GITHUB_REPO_NAME'] = 'test-repo'
-        os.environ['ROUGE_GITHUB_COMMIT_HASH'] = 'abc123'
+        os.environ['ROUGE_GITHUB_COMMIT_HASH'] = 'abc1234'
 
         # Capture stdout to check for verbose output
         captured_output = io.StringIO()
 
         with redirect_stdout(captured_output):
             # Initialize tracer with verbose logging disabled
-            rouge.init()
+            rouge_ai.init()
 
             # Get the config to verify tracer_verbose is False
             config = tracer.get_config()
@@ -95,10 +95,10 @@ class TestTracerVerbose(unittest.TestCase):
         os.environ['ROUGE_SERVICE_NAME'] = 'test-service'
         os.environ['ROUGE_GITHUB_OWNER'] = 'test-owner'
         os.environ['ROUGE_GITHUB_REPO_NAME'] = 'test-repo'
-        os.environ['ROUGE_GITHUB_COMMIT_HASH'] = 'abc123'
+        os.environ['ROUGE_GITHUB_COMMIT_HASH'] = 'abc1234'
 
         # Initialize tracer
-        rouge.init()
+        rouge_ai.init()
 
         # Define a test function to trace
         @tracer.trace()
@@ -122,14 +122,14 @@ class TestTracerVerbose(unittest.TestCase):
         os.environ['ROUGE_SERVICE_NAME'] = 'test-service'
         os.environ['ROUGE_GITHUB_OWNER'] = 'test-owner'
         os.environ['ROUGE_GITHUB_REPO_NAME'] = 'test-repo'
-        os.environ['ROUGE_GITHUB_COMMIT_HASH'] = 'abc123'
+        os.environ['ROUGE_GITHUB_COMMIT_HASH'] = 'abc1234'
 
         # Capture stdout to check for verbose output
         captured_output = io.StringIO()
 
         with redirect_stdout(captured_output):
             # Initialize tracer with logger verbose logging enabled
-            rouge.init()
+            rouge_ai.init()
 
             # Get the config to verify logger_verbose is True
             config = tracer.get_config()
@@ -151,14 +151,14 @@ class TestTracerVerbose(unittest.TestCase):
         os.environ['ROUGE_SERVICE_NAME'] = 'test-service'
         os.environ['ROUGE_GITHUB_OWNER'] = 'test-owner'
         os.environ['ROUGE_GITHUB_REPO_NAME'] = 'test-repo'
-        os.environ['ROUGE_GITHUB_COMMIT_HASH'] = 'abc123'
+        os.environ['ROUGE_GITHUB_COMMIT_HASH'] = 'abc1234'
 
         # Capture stdout to check for verbose output
         captured_output = io.StringIO()
 
         with redirect_stdout(captured_output):
             # Initialize tracer with logger verbose logging disabled
-            rouge.init()
+            rouge_ai.init()
 
             # Get the config to verify logger_verbose is False
             config = tracer.get_config()
@@ -182,14 +182,14 @@ class TestTracerVerbose(unittest.TestCase):
         os.environ['ROUGE_SERVICE_NAME'] = 'test-service'
         os.environ['ROUGE_GITHUB_OWNER'] = 'test-owner'
         os.environ['ROUGE_GITHUB_REPO_NAME'] = 'test-repo'
-        os.environ['ROUGE_GITHUB_COMMIT_HASH'] = 'abc123'
+        os.environ['ROUGE_GITHUB_COMMIT_HASH'] = 'abc1234'
 
         # Capture stdout to check for verbose output
         captured_output = io.StringIO()
 
         with redirect_stdout(captured_output):
             # Initialize tracer with both verbose modes enabled
-            rouge.init()
+            rouge_ai.init()
 
             # Get the config to verify both verbose modes are True
             config = tracer.get_config()
@@ -211,14 +211,14 @@ class TestTracerVerbose(unittest.TestCase):
         os.environ['ROUGE_SERVICE_NAME'] = 'test-service'
         os.environ['ROUGE_GITHUB_OWNER'] = 'test-owner'
         os.environ['ROUGE_GITHUB_REPO_NAME'] = 'test-repo'
-        os.environ['ROUGE_GITHUB_COMMIT_HASH'] = 'abc123'
+        os.environ['ROUGE_GITHUB_COMMIT_HASH'] = 'abc1234'
 
         # Capture stdout to check for verbose output
         captured_output = io.StringIO()
 
         with redirect_stdout(captured_output):
             # Initialize tracer without setting tracer_verbose
-            rouge.init()
+            rouge_ai.init()
 
             # Get the config to verify tracer_verbose defaults to False
             config = tracer.get_config()

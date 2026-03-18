@@ -7,7 +7,7 @@
 
 <p><strong>Production-ready observability and instrumentation for LLM applications</strong></p>
 
-[![PyPI version](https://badge.fury.io/py/rouge.svg)](https://badge.fury.io/py/rouge)
+[![PyPI version](https://badge.fury.io/py/rouge-ai.svg)](https://badge.fury.io/py/rouge-ai)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/github/license/revanthkumar96/rouge.ai-sdk)](https://github.com/revanthkumar96/rouge.ai-sdk/blob/main/LICENSE)
 
@@ -60,16 +60,27 @@ Whether you're building chatbots, AI assistants, or complex multi-agent systems,
 
 ______________________________________________________________________
 
+## Unified Dashboard (Port 10108)
+
+Rouge.AI includes a built-in dashboard to visualize your traces and logs locally.
+
+```python
+import rouge_ai
+
+# Launch the dashboard on http://localhost:10108
+rouge_ai.launch_dashboard()
+```
+
 ## Key Features
 
 - **🔌 Auto-Instrumentation**: Automatic instrumentation for 10+ LLM providers and frameworks
-- **📊 Distributed Tracing**: Full request tracing with context propagation
+- **📊 Unified Dashboard**: Integrated observability UI on port `10108`
+- **🏠 Self-Hostable**: Works without a Rouge API key using your own AWS/OTLP infrastructure
 - **📝 Structured Logging**: Production-ready logging with configurable levels
 - **⚡ Async Support**: Native support for asyncio and concurrent operations
 - **🎯 Zero-Config Start**: Works out-of-the-box with sensible defaults
 - **🔧 Highly Configurable**: Fine-grained control over instrumentation behavior
 - **🪶 Lightweight**: Minimal performance overhead
-- **🔒 Secure**: No data sent externally without explicit configuration
 
 ______________________________________________________________________
 
@@ -80,7 +91,7 @@ ______________________________________________________________________
 Install Rouge.AI using pip:
 
 ```bash
-pip install rouge
+pip install rouge-ai
 ```
 
 ### With LLM Support
@@ -88,7 +99,7 @@ pip install rouge
 For automatic LLM provider instrumentation, install with the `llm` extra:
 
 ```bash
-pip install "rouge[llm]"
+pip install "rouge-ai[llm]"
 ```
 
 This includes instrumentation packages for all supported providers.
@@ -98,8 +109,8 @@ This includes instrumentation packages for all supported providers.
 After installation, verify that Rouge.AI is correctly installed:
 
 ```python
-import rouge
-print(rouge.__version__)
+import rouge_ai
+print(rouge_ai.__version__)
 ```
 
 ______________________________________________________________________
@@ -111,13 +122,13 @@ ______________________________________________________________________
 Initialize Rouge.AI in your application:
 
 ```python
-import rouge
+import rouge_ai
 
 # Initialize with minimal configuration
-rouge.init(service_name="my-app")
+rouge_ai.init(service_name="my-app")
 
 # Get a logger instance
-logger = rouge.get_logger()
+logger = rouge_ai.get_logger()
 
 logger.info("Application started successfully")
 ```
@@ -127,12 +138,12 @@ logger.info("Application started successfully")
 Rouge.AI fully supports async/await patterns:
 
 ```python
-import rouge
+import rouge_ai
 import asyncio
 
-logger = rouge.get_logger()
+logger = rouge_ai.get_logger()
 
-@rouge.trace()
+@rouge_ai.trace()
 async def greet(name: str) -> str:
     logger.info(f"Greeting user: {name}")
     await asyncio.sleep(0.1)  # Simulate async work
@@ -146,16 +157,92 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
+### Self-Hosting
+
+You can use Rouge.AI without any cloud account by providing your own OTLP endpoint and AWS credentials.
+
+```python
+import rouge_ai
+
+rouge_ai.init(
+    service_name="my-app",
+    # Point to your own collector (like the Rouge Dashboard)
+    otlp_endpoint="http://localhost:10108/v1/traces",
+    # Provide your own infrastructure keys
+    aws_access_key_id="your-key",
+    aws_secret_access_key="your-secret",
+    allow_insecure_transport=True
+)
+```
+
+### Advanced: Local OTLP Setup with Docker
+
+If you need a more robust or customizable local setup, you can host the official OpenTelemetry Collector using Docker.
+
+#### 1. Create a Configuration File (`otel-config.yaml`)
+
+Define how the collector should handle data:
+
+```yaml
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+
+processors:
+  batch:
+
+exporters:
+  debug:
+    verbosity: detailed
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug]
+```
+
+#### 2. Run the Collector with Docker
+
+```bash
+docker run -d --name otel-collector \
+  -p 4317:4317 \
+  -p 4318:4318 \
+  -v ${PWD}/otel-config.yaml:/etc/otelcol/config.yaml \
+  otel/opentelemetry-collector:latest
+```
+
+#### 3. Configure Rouge to Use the Collector
+
+```python
+rouge_ai.init(
+    service_name="my-app",
+    otlp_endpoint="http://localhost:4318/v1/traces", # OTLP HTTP port
+    allow_insecure_transport=True
+)
+```
+
+#### 4. View Data
+
+The `debug` exporter prints traces and metrics directly to the Docker container logs:
+
+```bash
+docker logs -f otel-collector
+```
+
 ### LLM Auto-Instrumentation
 
 Rouge.AI automatically detects and instruments installed LLM providers:
 
 ```python
-import rouge
+import rouge_ai
 from openai import OpenAI
 
 # Initialize Rouge.AI - automatically instruments OpenAI
-rouge.init(
+rouge_ai.init(
     service_name="my-llm-service",
     instrument_llm=True
 )
@@ -175,9 +262,9 @@ ______________________________________________________________________
 ### Basic Configuration
 
 ```python
-import rouge
+import rouge_ai
 
-rouge.init(
+rouge_ai.init(
     service_name="my-service",      # Required: Your service identifier
     environment="production",        # Optional: deployment environment
     version="1.0.0",                # Optional: service version
@@ -187,9 +274,9 @@ rouge.init(
 ### Advanced LLM Configuration
 
 ```python
-import rouge
+import rouge_ai
 
-rouge.init(
+rouge_ai.init(
     service_name="my-llm-service",
 
     # LLM instrumentation controls
@@ -239,15 +326,15 @@ ______________________________________________________________________
 
 ### Tracing Decorators
 
-Use the `@rouge.trace()` decorator to automatically trace function execution:
+Use the `@rouge_ai.trace()` decorator to automatically trace function execution:
 
 ```python
-import rouge
+import rouge_ai
 
-rouge.init(service_name="example-service")
-logger = rouge.get_logger()
+rouge_ai.init(service_name="example-service")
+logger = rouge_ai.get_logger()
 
-@rouge.trace()
+@rouge_ai.trace()
 def process_data(data: dict) -> dict:
     logger.info(f"Processing {len(data)} items")
     # Your processing logic here
@@ -261,10 +348,10 @@ result = process_data({"items": [1, 2, 3]})
 For fine-grained control, create manual spans:
 
 ```python
-import rouge
+import rouge_ai
 
-rouge.init(service_name="manual-tracing")
-tracer = rouge.get_tracer()
+rouge_ai.init(service_name="manual-tracing")
+tracer = rouge_ai.get_tracer()
 
 with tracer.start_span("database_query") as span:
     span.set_attribute("query.type", "SELECT")
@@ -279,12 +366,12 @@ with tracer.start_span("database_query") as span:
 Rouge.AI provides structured logging with automatic trace correlation:
 
 ```python
-import rouge
+import rouge_ai
 
-rouge.init(service_name="logging-example")
-logger = rouge.get_logger()
+rouge_ai.init(service_name="logging-example")
+logger = rouge_ai.get_logger()
 
-@rouge.trace()
+@rouge_ai.trace()
 def user_signup(email: str, username: str):
     logger.info(f"New user signup attempt", extra={
         "email": email,
@@ -306,7 +393,7 @@ ______________________________________________________________________
 
 ### Core Functions
 
-#### `rouge.init(**config)`
+#### `rouge_ai.init(**config)`
 
 Initialize the Rouge.AI SDK with configuration options.
 
@@ -318,19 +405,19 @@ Initialize the Rouge.AI SDK with configuration options.
 - `instrument_llm` (bool, optional): Enable LLM instrumentation (default: True)
 - `llm_providers` (List[str], optional): Specific providers to instrument
 
-#### `rouge.get_logger(name: str = None)`
+#### `rouge_ai.get_logger(name: str = None)`
 
 Get a logger instance for structured logging.
 
 **Returns:** Logger instance with trace context integration
 
-#### `rouge.get_tracer(name: str = None)`
+#### `rouge_ai.get_tracer(name: str = None)`
 
 Get a tracer instance for manual span creation.
 
 **Returns:** Tracer instance for creating spans
 
-#### `@rouge.trace(name: str = None, **attributes)`
+#### `@rouge_ai.trace(name: str = None, **attributes)`
 
 Decorator to automatically trace function execution.
 
@@ -351,10 +438,10 @@ ______________________________________________________________________
 
 **Solution**:
 
-1. Ensure you installed Rouge.AI with LLM support: `pip install "rouge[llm]"`
+1. Ensure you installed Rouge.AI with LLM support: `pip install "rouge-ai[llm]"`
 1. Verify the provider package is installed (e.g., `pip install openai`)
-1. Check that `instrument_llm=True` in your `rouge.init()` call
-1. Ensure `rouge.init()` is called before importing the LLM provider
+1. Check that `instrument_llm=True` in your `rouge_ai.init()` call
+1. Ensure `rouge_ai.init()` is called before importing the LLM provider
 
 ### Import Errors
 
@@ -362,7 +449,7 @@ ______________________________________________________________________
 
 **Solution**:
 
-1. Verify installation: `pip show rouge`
+1. Verify installation: `pip show rouge-ai`
 1. Check Python version compatibility (requires Python 3.11+)
 1. Ensure you're using the correct virtual environment
 
@@ -399,7 +486,7 @@ ______________________________________________________________________
 
 ### Q: How do I disable instrumentation for a specific function?
 
-**A**: Simply don't use the `@rouge.trace()` decorator on that function. Instrumentation is opt-in at the function level.
+**A**: Simply don't use the `@rouge_ai.trace()` decorator on that function. Instrumentation is opt-in at the function level.
 
 ### Q: Can I use Rouge.AI in Jupyter notebooks?
 
@@ -441,7 +528,7 @@ ______________________________________________________________________
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE). See the LICENSE file for details.
+This project is licensed under the [Apache-2.0 License](LICENSE). See the LICENSE file for details.
 
 ______________________________________________________________________
 

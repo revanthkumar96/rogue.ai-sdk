@@ -25,12 +25,12 @@ from opentelemetry.trace.propagation.tracecontext import \
     TraceContextTextMapPropagator
 from opentelemetry.util._once import Once
 
-from rouge.config import RougeConfig
-from rouge.constants import ENV_VAR_MAPPING
-from rouge.credentials import CredentialManager
-from rouge.integrations.llm import instrument_llm
-from rouge.logger import shutdown_logger
-from rouge.utils.config import find_rouge_config
+from rouge_ai.config import RougeConfig
+from rouge_ai.constants import ENV_VAR_MAPPING
+from rouge_ai.credentials import CredentialManager
+from rouge_ai.integrations.llm import instrument_llm
+from rouge_ai.logger import shutdown_logger
+from rouge_ai.utils.config import find_rouge_config
 
 
 def tracer_verbose(config: RougeConfig, message: str, *args: Any) -> None:
@@ -92,7 +92,7 @@ def _load_env_config() -> dict[str, Any]:
     Returns:
         Dictionary with validated config values from environment variables
     """
-    from rouge.utils.security import validate_config_value
+    from rouge_ai.utils.security import validate_config_value
 
     env_config = {}
 
@@ -171,6 +171,12 @@ def init(**kwargs: Any) -> TracerProvider:
     config_params.update(kwargs)
     config_params.update(env_config)  # env vars have highest priority
 
+    # DEBUG
+    print(f"DEBUG: yaml_config={yaml_config}")
+    print(f"DEBUG: kwargs={kwargs}")
+    print(f"DEBUG: env_config={env_config}")
+    print(f"DEBUG: config_params={config_params}")
+
     if len(config_params) == 0:
         return
 
@@ -197,15 +203,21 @@ def init(**kwargs: Any) -> TracerProvider:
 
     # Create resource with service information
     tracer_verbose(config, "Creating OpenTelemetry resource...")
-    resource = Resource(
-        attributes={
-            SERVICE_NAME: config.service_name,
-            "service.github_owner": config.github_owner,
-            "service.github_repo_name": config.github_repo_name,
-            "service.version": config.github_commit_hash,
-            "service.environment": config.environment,
-            "telemetry.sdk.language": "python",
-        })
+    
+    resource_attributes = {
+        SERVICE_NAME: config.service_name,
+        "service.github_owner": config.github_owner,
+        "service.github_repo_name": config.github_repo_name,
+        "service.version": config.github_commit_hash,
+        "service.environment": config.environment,
+        "telemetry.sdk.language": "python",
+    }
+    
+    # Filter out None values as OpenTelemetry doesn't allow them
+    resource_attributes = {k: v for k, v in resource_attributes.items() 
+                           if v is not None}
+    
+    resource = Resource(attributes=resource_attributes)
 
     # Create tracer provider
     tracer_verbose(config, "Creating tracer provider...")
@@ -295,6 +307,18 @@ def shutdown() -> None:
 def is_initialized() -> bool:
     """Check if tracing has been initialized"""
     return _tracer_provider is not None
+
+
+def get_tracer(name: str | None = None) -> otel_trace.Tracer:
+    """Get a tracer instance.
+
+    Args:
+        name: Tracer name, defaults to 'rouge-ai'
+
+    Returns:
+        Tracer instance
+    """
+    return otel_trace.get_tracer(name or "rouge-ai")
 
 
 def get_tracer_provider() -> TracerProvider | None:
