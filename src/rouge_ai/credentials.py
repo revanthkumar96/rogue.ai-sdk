@@ -33,8 +33,8 @@ class CredentialManager:
             return None
 
         # Check if credentials are provided directly in config (Self-Hosting)
-        if (self.config.aws_access_key_id and 
-            self.config.aws_secret_access_key):
+        if (self.config.aws_access_key_id
+                and self.config.aws_secret_access_key):
             return {
                 'aws_access_key_id': self.config.aws_access_key_id,
                 'aws_secret_access_key': self.config.aws_secret_access_key,
@@ -75,8 +75,8 @@ class CredentialManager:
     def _fetch_and_cache_credentials(self) -> None:
         """Fetch credentials from API and update config automatically"""
         # Bypass if manually provided
-        if (self.config.aws_access_key_id and 
-            self.config.aws_secret_access_key):
+        if (self.config.aws_access_key_id
+                and self.config.aws_secret_access_key):
             return
 
         try:

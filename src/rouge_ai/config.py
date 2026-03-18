@@ -12,9 +12,9 @@ class RougeConfig:
     service_name: str
 
     # GitHub Identification
-    github_owner: str | None = None
-    github_repo_name: str | None = None
-    github_commit_hash: str | None = None
+    github_owner: str = "unknown"
+    github_repo_name: str = "unknown"
+    github_commit_hash: str = "unknown"
 
     # Token for Rouge API
     token: str | None = None

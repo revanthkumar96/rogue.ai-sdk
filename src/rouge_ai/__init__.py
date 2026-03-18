@@ -1,16 +1,17 @@
 from rouge_ai.config import RougeConfig
 from rouge_ai.logger import get_logger
-from rouge_ai.tracer import TraceOptions, shutdown, trace, get_tracer
+from rouge_ai.tracer import TraceOptions, get_tracer, shutdown, trace
 
 
 def launch_dashboard(port: int = 10108, host: str = "0.0.0.0"):
     """Launch the Rouge.AI self-hosted dashboard.
-    
+
     This starts a FastAPI server on the specified port that collects
     telemetry and provides a beautiful web UI for visualization.
     """
     from rouge_ai.dashboard.server import start_dashboard
     start_dashboard(port=port, host=host)
+
 
 __version__ = "0.0.10"
 

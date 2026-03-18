@@ -300,7 +300,8 @@ class RougeLogger:
         self.credential_manager = credential_manager or CredentialManager(
             config)
 
-        self.logger = logging.getLogger(f"rouge_ai.{name or config.service_name}")
+        self.logger = logging.getLogger(
+            f"rouge_ai.{name or config.service_name}")
         self.logger.setLevel(logging.DEBUG)
         log_verbose(config, "Logger level set to DEBUG")
 
@@ -711,7 +712,8 @@ def shutdown_logger() -> None:
 def get_logger(name: str | None = None) -> RougeLogger:
     """Get the global logger instance or create a new one"""
     if _global_logger is None:
-        raise RuntimeError("Logger not initialized. Call rouge_ai.init() first.")
+        raise RuntimeError(
+            "Logger not initialized. Call rouge_ai.init() first.")
 
     if name is None:
         return _global_logger

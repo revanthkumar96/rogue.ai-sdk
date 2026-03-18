@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Activity, 
-  Database, 
-  Terminal, 
-  Shield, 
-  Settings, 
-  Search, 
-  Bell, 
+import {
+  Activity,
+  Database,
+  Terminal,
+  Shield,
+  Settings,
+  Search,
+  Bell,
   Filter,
   RefreshCw,
   Clock,
@@ -15,13 +15,13 @@ import {
   Layers,
   FileText
 } from 'lucide-react';
-import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   AreaChart,
   Area
@@ -81,7 +81,7 @@ const App = () => {
           <div className="logo-icon">R</div>
           <span>Rouge.AI</span>
         </div>
-        
+
         <div className="nav-items">
           <NavItem active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} icon={<Activity />} label="Overview" />
           <NavItem active={activeTab === 'traces'} onClick={() => setActiveTab('traces')} icon={<Layers />} label="Traces" />
@@ -104,7 +104,7 @@ const App = () => {
               Live Monitoring Active
             </div>
           </div>
-          
+
           <div className="header-actions">
             <button className="refresh-btn glass" onClick={fetchTelemetry}>
               <RefreshCw className={isRefreshing ? "spin" : ""} size={18} />
@@ -117,7 +117,7 @@ const App = () => {
 
         <AnimatePresence mode="wait">
           {activeTab === 'overview' && (
-            <motion.div 
+            <motion.div
               key="overview"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -125,7 +125,7 @@ const App = () => {
               className="dashboard-view"
             >
               {renderStats()}
-              
+
               <div className="charts-row">
                 <div className="chart-container glass">
                   <h3>Throughput (Requests/sec)</h3>
@@ -197,7 +197,7 @@ const TraceItem = ({ data }) => {
   const firstSpan = data?.resourceSpans?.[0]?.scopeSpans?.[0]?.spans?.[0];
   const name = firstSpan?.name || "unnamed-span";
   const duration = (firstSpan?.endTimeUnixNano - firstSpan?.startTimeUnixNano) / 1000000;
-  
+
   return (
     <div className="tail-item">
       <div className="item-main">
@@ -214,7 +214,7 @@ const TraceItem = ({ data }) => {
 };
 
 const TelemetryList = ({ items, type }) => (
-  <motion.div 
+  <motion.div
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
     className="full-list-view"

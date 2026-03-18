@@ -203,7 +203,7 @@ def init(**kwargs: Any) -> TracerProvider:
 
     # Create resource with service information
     tracer_verbose(config, "Creating OpenTelemetry resource...")
-    
+
     resource_attributes = {
         SERVICE_NAME: config.service_name,
         "service.github_owner": config.github_owner,
@@ -212,11 +212,15 @@ def init(**kwargs: Any) -> TracerProvider:
         "service.environment": config.environment,
         "telemetry.sdk.language": "python",
     }
-    
-    # Filter out None values as OpenTelemetry doesn't allow them
-    resource_attributes = {k: v for k, v in resource_attributes.items() 
-                           if v is not None}
-    
+
+    # Ensure all values are strings as OpenTelemetry requires.
+    # Filter out None values.
+    resource_attributes = {
+        str(k): str(v)
+        for k, v in resource_attributes.items()
+        if v is not None and k is not None
+    }
+
     resource = Resource(attributes=resource_attributes)
 
     # Create tracer provider
@@ -282,7 +286,8 @@ def shutdown_tracing() -> None:
 
     if _tracer_provider is not None:
         if _config and _config.tracer_verbose:
-            tracer_verbose(_config, "Shutting down tracing...")
+            tracer_verbose(_config, "Flushing and shutting down tracing...")
+        _tracer_provider.force_flush()
         _tracer_provider.shutdown()
         _tracer_provider = None
         _config = None

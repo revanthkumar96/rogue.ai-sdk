@@ -1,13 +1,11 @@
-import os
-import json
 import logging
-import asyncio
-from typing import List, Dict, Any
-from fastapi import FastAPI, Request, BackgroundTasks
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, FileResponse
-from fastapi.middleware.cors import CORSMiddleware
+import os
+
 import uvicorn
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -25,13 +23,10 @@ app.add_middleware(
 
 # In-memory storage for telemetry data
 # In a production scenario, this could be SQLite or a persistent store
-TELEMETRY_DATA = {
-    "traces": [],
-    "logs": [],
-    "metrics": []
-}
+TELEMETRY_DATA = {"traces": [], "logs": [], "metrics": []}
 
 MAX_ITEMS = 500
+
 
 @app.post("/v1/traces")
 async def collect_traces(request: Request):
@@ -40,11 +35,40 @@ async def collect_traces(request: Request):
         TELEMETRY_DATA["traces"].insert(0, data)
         # Prune older items
         TELEMETRY_DATA["traces"] = TELEMETRY_DATA["traces"][:MAX_ITEMS]
-        logger.info(f"Received traces: {len(data.get('resourceSpans', []))} resource spans")
+        logger.info("Received traces: %d resource spans",
+                    len(data.get("resourceSpans", [])))
         return {"status": "ok"}
     except Exception as e:
         logger.error(f"Error collecting traces: {e}")
         return {"status": "error", "message": str(e)}
+
+
+@app.post("/api/ingest")
+async def ingest_telemetry(request: Request):
+    """
+    Ingestion point for OTel Collector's HTTP exporter.
+    Expects JSON format.
+    """
+    try:
+        data = await request.json()
+        # The collector's JSON export format might vary
+        # but usually it's OTLP JSON
+        if "resourceSpans" in data:
+            TELEMETRY_DATA["traces"].insert(0, data)
+            TELEMETRY_DATA["traces"] = TELEMETRY_DATA["traces"][:MAX_ITEMS]
+        if "resourceLogs" in data:
+            TELEMETRY_DATA["logs"].insert(0, data)
+            TELEMETRY_DATA["logs"] = TELEMETRY_DATA["logs"][:MAX_ITEMS]
+        if "resourceMetrics" in data:
+            TELEMETRY_DATA["metrics"].insert(0, data)
+            TELEMETRY_DATA["metrics"] = TELEMETRY_DATA["metrics"][:MAX_ITEMS]
+
+        logger.info("Ingested telemetry from collector")
+        return {"status": "ok"}
+    except Exception as e:
+        logger.error(f"Ingestion error: {e}")
+        return {"status": "error", "message": str(e)}
+
 
 @app.post("/v1/logs")
 async def collect_logs(request: Request):
@@ -52,11 +76,14 @@ async def collect_logs(request: Request):
         data = await request.json()
         TELEMETRY_DATA["logs"].insert(0, data)
         TELEMETRY_DATA["logs"] = TELEMETRY_DATA["logs"][:MAX_ITEMS]
-        logger.info(f"Received logs: {len(data.get('resourceLogs', []))} resource logs")
+        logger.info(
+            f"Received logs: {len(data.get('resourceLogs', []))} resource logs"
+        )
         return {"status": "ok"}
     except Exception as e:
         logger.error(f"Error collecting logs: {e}")
         return {"status": "error", "message": str(e)}
+
 
 @app.post("/v1/metrics")
 async def collect_metrics(request: Request):
@@ -69,29 +96,44 @@ async def collect_metrics(request: Request):
         logger.error(f"Error collecting metrics: {e}")
         return {"status": "error", "message": str(e)}
 
+
 @app.get("/api/telemetry")
 async def get_telemetry():
     """Endpoint for the frontend to fetch latest data"""
     return TELEMETRY_DATA
+
 
 # Path to static files
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
 # Mount static files if directory exists
 if os.path.exists(STATIC_DIR) and os.listdir(STATIC_DIR):
+    # Mount assets directory specifically for Vite build assets
+    assets_dir = os.path.join(STATIC_DIR, "assets")
+    if os.path.exists(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+    # Also mount the root static dir for things like favicon, index.css etc
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
     @app.get("/{full_path:path}")
     async def serve_frontend(full_path: str):
-        # Serve index.html for all non-API paths (SPA support)
+        # API routes are already handled by decorators
         if full_path.startswith("api/") or full_path.startswith("v1/"):
-            return None # Should be handled by other routes
-        
+            return None
+
+        # Check if the requested file exists in STATIC_DIR
+        file_path = os.path.join(STATIC_DIR, full_path)
+        if os.path.isfile(file_path):
+            return FileResponse(file_path)
+
+        # Fallback to index.html for SPA routing
         index_file = os.path.join(STATIC_DIR, "index.html")
         if os.path.exists(index_file):
             return FileResponse(index_file)
         return HTMLResponse("Frontend not built. Please run build process.")
 else:
+
     @app.get("/")
     async def root():
         return {
@@ -100,9 +142,11 @@ else:
             "status": "Frontend not found in src/rouge_ai/dashboard/static"
         }
 
+
 def start_dashboard(port: int = 10108, host: str = "0.0.0.0"):
     logger.info(f"Starting Rouge Dashboard on http://{host}:{port}")
     uvicorn.run(app, host=host, port=port)
+
 
 if __name__ == "__main__":
     start_dashboard()
