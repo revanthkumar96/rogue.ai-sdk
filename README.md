@@ -2,7 +2,6 @@
 
 <div align="center">
   <a href="https://github.com/revanthkumar96/rouge.ai-sdk">
-    <img src="https://raw.githubusercontent.com/revanthkumar96/rouge.ai-sdk/main/misc/images/rouge_logo.png" alt="Rouge Logo">
   </a>
 
 <p><strong>Production-ready observability and instrumentation for LLM applications</strong></p>
