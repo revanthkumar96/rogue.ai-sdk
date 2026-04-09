@@ -49,13 +49,15 @@ def init(**kwargs):
 
 def connect_fastapi(app):
     """Connect Rouge to a FastAPI application for automatic tracing."""
-    from rouge_ai.integrations.fastapi import connect_fastapi as _connect_fastapi
+    from rouge_ai.integrations.fastapi import \
+        connect_fastapi as _connect_fastapi
     return _connect_fastapi(app)
 
 
 def mount_dashboard(app, path=None):
     """Mount the Rouge Dashboard onto a FastAPI application."""
-    from rouge_ai.integrations.fastapi import mount_dashboard as _mount_dashboard
+    from rouge_ai.integrations.fastapi import \
+        mount_dashboard as _mount_dashboard
     return _mount_dashboard(app, path=path)
 
 
@@ -72,4 +74,3 @@ __all__ = [
     'RougeConfig',
     'TraceOptions',
 ]
-

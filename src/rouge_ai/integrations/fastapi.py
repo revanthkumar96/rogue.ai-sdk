@@ -1,6 +1,7 @@
 """FastAPI integration for automatic request tracing"""
 
 import logging
+
 from fastapi import FastAPI
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.trace import Span
@@ -234,7 +235,8 @@ def connect_fastapi(app: FastAPI) -> None:
     if config.auto_mount_dashboard:
         try:
             mount_dashboard(app, path=config.dashboard_auto_path)
-            logger.info(f"Dashboard auto-mounted at {config.dashboard_auto_path}")
+            logger.info(
+                f"Dashboard auto-mounted at {config.dashboard_auto_path}")
         except Exception as e:
             logger.warning(f"Failed to auto-mount dashboard: {e}")
 
@@ -245,8 +247,9 @@ def mount_dashboard(app: FastAPI, path: str = None) -> None:
 
     Args:
         app: The FastAPI application to mount the dashboard on.
-        path: Optional path for the dashboard. Defaults to config.dashboard_auto_path
-              ("/rouge") for seamless integration like Swagger UI.
+        path: Optional path for the dashboard. Defaults to
+              config.dashboard_auto_path ("/rouge") for seamless
+              integration like Swagger UI.
 
     Example:
         from fastapi import FastAPI
@@ -271,4 +274,3 @@ def mount_dashboard(app: FastAPI, path: str = None) -> None:
     app.mount(target_path, dashboard_app)
     # Using logger if available, otherwise print
     logger.info(f"Rouge Dashboard mounted at {target_path}")
-

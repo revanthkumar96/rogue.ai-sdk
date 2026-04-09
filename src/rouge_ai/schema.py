@@ -6,29 +6,25 @@ capabilities, functions, decorators, and configuration options.
 
 from typing import Any, Dict
 
-from rouge_ai.introspection import (
-    get_all_decorators,
-    get_all_functions,
-    get_config_schema,
-    get_examples,
-    get_traced_functions,
-)
+from rouge_ai.introspection import (get_all_decorators, get_all_functions,
+                                    get_config_schema, get_examples,
+                                    get_traced_functions)
 
 
 def generate_sdk_schema() -> Dict[str, Any]:
     """Generate a complete schema describing the Rouge.ai SDK.
 
-    This schema includes all public functions, decorators, configuration options,
-    and usage examples in a structured format similar to OpenAPI.
-
-    Returns:
-        Dictionary containing the full SDK schema
+    This schema includes all public functions, decorators, config
+    options, and usage examples in a structured format.
     """
     schema = {
         "sdk": {
-            "name": "rouge-ai",
-            "version": _get_version(),
-            "description": "Production-ready observability SDK for LLM applications",
+            "name":
+            "rouge-ai",
+            "version":
+            _get_version(),
+            "description":
+            "Production-ready observability SDK for LLM applications",
         },
         "functions": get_all_functions(),
         "decorators": get_all_decorators(),
@@ -162,14 +158,21 @@ def generate_quick_reference() -> Dict[str, Any]:
         "quickstart": {
             "steps": [
                 {
-                    "step": 1,
-                    "title": "Initialize Rouge",
-                    "code": 'import rouge_ai\n\nrouge_ai.init(service_name="my-app")',
+                    "step":
+                    1,
+                    "title":
+                    "Initialize Rouge",
+                    "code":
+                    'import rouge_ai\n\nrouge_ai.init(service_name="my-app")',
                 },
                 {
-                    "step": 2,
-                    "title": "Trace your functions",
-                    "code": '@rouge_ai.trace()\ndef my_function():\n    return "Hello!"',
+                    "step":
+                    2,
+                    "title":
+                    "Trace your functions",
+                    "code": ("@rouge_ai.trace()\n"
+                             "def my_function():\n"
+                             "    return \"Hello!\""),
                 },
                 {
                     "step": 3,
@@ -180,16 +183,29 @@ def generate_quick_reference() -> Dict[str, Any]:
         },
         "common_patterns": {
             "fastapi_integration": {
-                "description": "Auto-trace all FastAPI endpoints",
-                "code": '''from fastapi import FastAPI\nimport rouge_ai\n\napp = FastAPI()\nrouge_ai.init(service_name="my-api")\nrouge_ai.connect_fastapi(app)''',
+                "description":
+                "Auto-trace all FastAPI endpoints",
+                "code": ("from fastapi import FastAPI\n"
+                         "import rouge_ai\n\n"
+                         "app = FastAPI()\n"
+                         "rouge_ai.init(service_name=\"my-api\")\n"
+                         "rouge_ai.connect_fastapi(app)"),
             },
             "custom_tracing": {
-                "description": "Trace with custom options",
-                "code": '''from rouge_ai import trace, TraceOptions\n\n@trace(TraceOptions(trace_params=True, trace_return_value=True))\ndef process(data):\n    return data''',
+                "description":
+                "Trace with custom options",
+                "code": ("from rouge_ai import trace, TraceOptions\n\n"
+                         "@trace(TraceOptions(trace_params=True, "
+                         "trace_return_value=True))\n"
+                         "def process(data):\n"
+                         "    return data"),
             },
             "logging": {
-                "description": "Use structured logging",
-                "code": '''logger = rouge_ai.get_logger(__name__)\nlogger.info("Event occurred", extra={"user_id": 123})''',
+                "description":
+                "Use structured logging",
+                "code": ("logger = rouge_ai.get_logger(__name__)\n"
+                         "logger.info(\"Event occurred\", "
+                         "extra={\"user_id\": 123})"),
             },
         },
         "dashboard_access": {
@@ -301,7 +317,8 @@ def export_schema_as_markdown() -> str:
             type_hint = field.get("type", "")
             default = field.get("default", "None")
             description = field.get("description", "")
-            md.append(f"| `{name}` | `{type_hint}` | `{default}` | {description} |")
+            md.append(
+                f"| `{name}` | `{type_hint}` | `{default}` | {description} |")
 
         md.append("")
 

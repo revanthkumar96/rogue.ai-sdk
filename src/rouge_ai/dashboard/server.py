@@ -3,11 +3,11 @@ import os
 import secrets
 
 import uvicorn
-from fastapi import FastAPI, Request, Depends, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from fastapi.staticfiles import StaticFiles
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -20,25 +20,28 @@ MAX_ITEMS = 500
 
 security = HTTPBasic()
 
+
 def get_dashboard_app(config=None):
     """
     Creates and returns the Rouge Dashboard FastAPI application.
-    
+
     Args:
         config: Optional RougeConfig object containing security settings.
     """
-    
+
     # Auth dependency
-    async def auth_check(credentials: HTTPBasicCredentials = Depends(security)):
-        if not config or not config.dashboard_username or not config.dashboard_password:
+    async def auth_check(
+            credentials: HTTPBasicCredentials = Depends(security)):
+        if not config or not config.dashboard_username or \
+                not config.dashboard_password:
             # If no auth configured, allow access
             return True
-            
-        is_correct_username = secrets.compare_digest(
-            credentials.username, config.dashboard_username)
-        is_correct_password = secrets.compare_digest(
-            credentials.password, config.dashboard_password)
-        
+
+        is_correct_username = secrets.compare_digest(credentials.username,
+                                                     config.dashboard_username)
+        is_correct_password = secrets.compare_digest(credentials.password,
+                                                     config.dashboard_password)
+
         if not (is_correct_username and is_correct_password):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -52,10 +55,7 @@ def get_dashboard_app(config=None):
     if config and config.dashboard_username and config.dashboard_password:
         app_dependencies = [Depends(auth_check)]
 
-    app = FastAPI(
-        title="Rouge.AI Dashboard",
-        dependencies=app_dependencies
-    )
+    app = FastAPI(title="Rouge.AI Dashboard", dependencies=app_dependencies)
 
     # Enable CORS for development
     app.add_middleware(
@@ -76,7 +76,11 @@ def get_dashboard_app(config=None):
             return {"status": "ok"}
         except Exception as e:
             logger.error(f"Error collecting traces: {e}")
-            return JSONResponse({"status": "error", "message": str(e)}, status_code=400)
+            return JSONResponse({
+                "status": "error",
+                "message": str(e)
+            },
+                                status_code=400)
 
     @app.post("/api/ingest")
     async def ingest_telemetry(request: Request):
@@ -90,13 +94,18 @@ def get_dashboard_app(config=None):
                 TELEMETRY_DATA["logs"] = TELEMETRY_DATA["logs"][:MAX_ITEMS]
             if "resourceMetrics" in data:
                 TELEMETRY_DATA["metrics"].insert(0, data)
-                TELEMETRY_DATA["metrics"] = TELEMETRY_DATA["metrics"][:MAX_ITEMS]
+                TELEMETRY_DATA["metrics"] = TELEMETRY_DATA[
+                    "metrics"][:MAX_ITEMS]
 
             logger.info("Ingested telemetry from collector")
             return {"status": "ok"}
         except Exception as e:
             logger.error(f"Ingestion error: {e}")
-            return JSONResponse({"status": "error", "message": str(e)}, status_code=400)
+            return JSONResponse({
+                "status": "error",
+                "message": str(e)
+            },
+                                status_code=400)
 
     @app.post("/v1/logs")
     async def collect_logs(request: Request):
@@ -104,13 +113,16 @@ def get_dashboard_app(config=None):
             data = await request.json()
             TELEMETRY_DATA["logs"].insert(0, data)
             TELEMETRY_DATA["logs"] = TELEMETRY_DATA["logs"][:MAX_ITEMS]
-            logger.info(
-                f"Received logs: {len(data.get('resourceLogs', []))} resource logs"
-            )
+            logger.info(f"Received logs: {len(data.get('resourceLogs', []))} "
+                        f"resource logs")
             return {"status": "ok"}
         except Exception as e:
             logger.error(f"Error collecting logs: {e}")
-            return JSONResponse({"status": "error", "message": str(e)}, status_code=400)
+            return JSONResponse({
+                "status": "error",
+                "message": str(e)
+            },
+                                status_code=400)
 
     @app.post("/v1/metrics")
     async def collect_metrics(request: Request):
@@ -121,7 +133,11 @@ def get_dashboard_app(config=None):
             return {"status": "ok"}
         except Exception as e:
             logger.error(f"Error collecting metrics: {e}")
-            return JSONResponse({"status": "error", "message": str(e)}, status_code=400)
+            return JSONResponse({
+                "status": "error",
+                "message": str(e)
+            },
+                                status_code=400)
 
     @app.get("/api/telemetry")
     async def get_telemetry():
@@ -142,7 +158,9 @@ def get_dashboard_app(config=None):
     if os.path.exists(static_dir) and os.listdir(static_dir):
         assets_dir = os.path.join(static_dir, "assets")
         if os.path.exists(assets_dir):
-            app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+            app.mount("/assets",
+                      StaticFiles(directory=assets_dir),
+                      name="assets")
 
         app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
@@ -162,6 +180,7 @@ def get_dashboard_app(config=None):
 
             return HTMLResponse("File not found", status_code=404)
     else:
+
         @app.get("/")
         async def root():
             return {
@@ -172,12 +191,15 @@ def get_dashboard_app(config=None):
 
     return app
 
+
 # Maintain backward compatibility for standalone launch
 app = get_dashboard_app()
+
 
 def start_dashboard(port: int = 10108, host: str = "0.0.0.0"):
     logger.info(f"Starting Rouge Dashboard on http://{host}:{port}")
     uvicorn.run(app, host=host, port=port)
+
 
 if __name__ == "__main__":
     start_dashboard()

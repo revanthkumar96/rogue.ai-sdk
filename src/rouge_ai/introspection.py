@@ -200,7 +200,8 @@ def _register_config_fields() -> None:
         # Identification
         "service_name": ("identification", "Service name for telemetry", True),
         "github_owner": ("identification", "GitHub repository owner", False),
-        "github_repo_name": ("identification", "GitHub repository name", False),
+        "github_repo_name":
+        ("identification", "GitHub repository name", False),
         "github_commit_hash": ("identification", "Git commit hash", False),
         "name": ("identification", "User identification name", False),
 
@@ -215,19 +216,26 @@ def _register_config_fields() -> None:
 
         # OpenTelemetry
         "otlp_endpoint": ("opentelemetry", "OTLP traces endpoint URL", False),
-        "environment": ("opentelemetry", "Deployment environment (e.g., production, staging)", False),
+        "environment":
+        ("opentelemetry", "Deployment environment (e.g., production, staging)",
+         False),
 
         # Span Export
-        "enable_span_console_export": ("export", "Enable console export of spans", False),
-        "enable_log_console_export": ("export", "Enable console export of logs", False),
-        "enable_span_cloud_export": ("export", "Enable cloud export of spans", False),
-        "enable_log_cloud_export": ("export", "Enable cloud export of logs", False),
+        "enable_span_console_export":
+        ("export", "Enable console export of spans", False),
+        "enable_log_console_export": ("export",
+                                      "Enable console export of logs", False),
+        "enable_span_cloud_export": ("export", "Enable cloud export of spans",
+                                     False),
+        "enable_log_cloud_export": ("export", "Enable cloud export of logs",
+                                    False),
 
         # Mode
         "local_mode": ("mode", "Enable local development mode", False),
 
         # Endpoints
-        "verification_endpoint": ("endpoints", "Credential verification endpoint", False),
+        "verification_endpoint": ("endpoints",
+                                  "Credential verification endpoint", False),
 
         # Debugging
         "tracer_verbose": ("debugging", "Enable verbose tracer output", False),
@@ -238,29 +246,33 @@ def _register_config_fields() -> None:
         "llm_providers": ("llm", "List of LLM providers to instrument", False),
 
         # Security
-        "allow_insecure_transport": ("security", "Allow HTTP endpoints (insecure)", False),
+        "allow_insecure_transport": ("security",
+                                     "Allow HTTP endpoints (insecure)", False),
         "log_response_bodies": ("security", "Log HTTP response bodies", False),
         "log_request_bodies": ("security", "Log HTTP request bodies", False),
-        "sanitize_telemetry_data": ("security", "Sanitize sensitive data in telemetry", False),
+        "sanitize_telemetry_data":
+        ("security", "Sanitize sensitive data in telemetry", False),
 
         # Dashboard
-        "dashboard_username": ("dashboard", "Dashboard HTTP basic auth username", False),
-        "dashboard_password": ("dashboard", "Dashboard HTTP basic auth password", False),
+        "dashboard_username": ("dashboard",
+                               "Dashboard HTTP basic auth username", False),
+        "dashboard_password": ("dashboard",
+                               "Dashboard HTTP basic auth password", False),
         "dashboard_path": ("dashboard", "Dashboard mount path", False),
     }
 
     for field_name, field_info in config_fields.items():
         category, description, required = field_categories.get(
             field_name,
-            ("general", f"Configuration field: {field_name}", False)
-        )
+            ("general", f"Configuration field: {field_name}", False))
 
         env_var = env_var_reverse.get(field_name)
 
         registry.register_config_field(
             name=field_name,
             type_hint=str(field_info.type),
-            default_value=field_info.default if field_info.default != inspect.Parameter.empty else None,
+            default_value=field_info.default
+            if field_info.default != inspect.Parameter.empty else None,
             description=description,
             required=required,
             category=category,
@@ -269,9 +281,10 @@ def _register_config_fields() -> None:
 
 
 def initialize_sdk_registry() -> None:
-    """Initialize the SDK registry with all built-in functions and decorators.
+    """Initialize the SDK registry with all built-in functions/decorators.
 
-    This function is called automatically when the introspection module is imported.
+    This function is called automatically when the introspection module
+    is imported.
     """
     _register_sdk_functions()
     _register_decorators()
@@ -343,12 +356,19 @@ def get_config_schema() -> Dict[str, Any]:
             by_category[meta.category] = []
 
         by_category[meta.category].append({
-            "name": meta.name,
-            "type": meta.type_hint,
-            "default": str(meta.default_value) if meta.default_value is not None else None,
-            "description": meta.description,
-            "required": meta.required,
-            "env_var": meta.env_var,
+            "name":
+            meta.name,
+            "type":
+            meta.type_hint,
+            "default":
+            str(meta.default_value)
+            if meta.default_value is not None else None,
+            "description":
+            meta.description,
+            "required":
+            meta.required,
+            "env_var":
+            meta.env_var,
         })
 
     return {

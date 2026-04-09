@@ -7,22 +7,14 @@ SDK capabilities, configuration, and user's traced functions.
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 
-from rouge_ai.introspection import (
-    get_all_decorators,
-    get_all_functions,
-    get_config_schema,
-    get_examples,
-    get_traced_functions,
-)
-from rouge_ai.schema import (
-    generate_sdk_schema,
-    generate_decorator_schema,
-    generate_function_schema,
-    generate_config_schema_formatted,
-    generate_quick_reference,
-    export_schema_as_json,
-    export_schema_as_markdown,
-)
+from rouge_ai.introspection import (get_all_decorators, get_all_functions,
+                                    get_config_schema, get_examples,
+                                    get_traced_functions)
+from rouge_ai.schema import (export_schema_as_json, export_schema_as_markdown,
+                             generate_config_schema_formatted,
+                             generate_decorator_schema,
+                             generate_function_schema,
+                             generate_quick_reference, generate_sdk_schema)
 
 
 def create_api_router() -> APIRouter:
@@ -35,7 +27,7 @@ def create_api_router() -> APIRouter:
 
     @router.get("/sdk/schema")
     async def get_sdk_schema():
-        """Get the complete SDK schema including all functions, decorators, and config.
+        """Get complete SDK schema including functions, decorators, and config.
 
         Returns:
             Full SDK schema as JSON
@@ -44,7 +36,8 @@ def create_api_router() -> APIRouter:
             schema = generate_sdk_schema()
             return JSONResponse(content=schema)
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to generate schema: {str(e)}")
+            raise HTTPException(status_code=500,
+                                detail=f"Failed to generate schema: {str(e)}")
 
     @router.get("/sdk/schema/json")
     async def get_sdk_schema_json():
@@ -57,7 +50,8 @@ def create_api_router() -> APIRouter:
             json_str = export_schema_as_json()
             return JSONResponse(content={"schema": json_str})
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to export schema: {str(e)}")
+            raise HTTPException(status_code=500,
+                                detail=f"Failed to export schema: {str(e)}")
 
     @router.get("/sdk/schema/markdown")
     async def get_sdk_schema_markdown():
@@ -70,7 +64,8 @@ def create_api_router() -> APIRouter:
             markdown = export_schema_as_markdown()
             return JSONResponse(content={"markdown": markdown})
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to export markdown: {str(e)}")
+            raise HTTPException(status_code=500,
+                                detail=f"Failed to export markdown: {str(e)}")
 
     @router.get("/sdk/decorators")
     async def get_decorators():
@@ -83,7 +78,8 @@ def create_api_router() -> APIRouter:
             decorators = get_all_decorators()
             return JSONResponse(content=decorators)
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to get decorators: {str(e)}")
+            raise HTTPException(status_code=500,
+                                detail=f"Failed to get decorators: {str(e)}")
 
     @router.get("/sdk/decorators/{decorator_name}")
     async def get_decorator(decorator_name: str):
@@ -98,12 +94,15 @@ def create_api_router() -> APIRouter:
         try:
             decorator = generate_decorator_schema(decorator_name)
             if not decorator:
-                raise HTTPException(status_code=404, detail=f"Decorator '{decorator_name}' not found")
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Decorator '{decorator_name}' not found")
             return JSONResponse(content=decorator)
         except HTTPException:
             raise
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to get decorator: {str(e)}")
+            raise HTTPException(status_code=500,
+                                detail=f"Failed to get decorator: {str(e)}")
 
     @router.get("/sdk/functions")
     async def get_functions():
@@ -116,14 +115,16 @@ def create_api_router() -> APIRouter:
             functions = get_all_functions()
             return JSONResponse(content=functions)
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to get functions: {str(e)}")
+            raise HTTPException(status_code=500,
+                                detail=f"Failed to get functions: {str(e)}")
 
     @router.get("/sdk/functions/{function_name:path}")
     async def get_function(function_name: str):
         """Get details for a specific function.
 
         Args:
-            function_name: Fully qualified function name (e.g., "rouge_ai.init")
+            function_name: Fully qualified function name
+                (e.g., "rouge_ai.init")
 
         Returns:
             Function metadata
@@ -131,12 +132,15 @@ def create_api_router() -> APIRouter:
         try:
             function = generate_function_schema(function_name)
             if not function:
-                raise HTTPException(status_code=404, detail=f"Function '{function_name}' not found")
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Function '{function_name}' not found")
             return JSONResponse(content=function)
         except HTTPException:
             raise
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to get function: {str(e)}")
+            raise HTTPException(status_code=500,
+                                detail=f"Failed to get function: {str(e)}")
 
     @router.get("/sdk/config")
     async def get_config():
@@ -149,7 +153,9 @@ def create_api_router() -> APIRouter:
             config = get_config_schema()
             return JSONResponse(content=config)
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to get config schema: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to get config schema: {str(e)}")
 
     @router.get("/sdk/config/formatted")
     async def get_config_formatted():
@@ -162,7 +168,9 @@ def create_api_router() -> APIRouter:
             config = generate_config_schema_formatted()
             return JSONResponse(content=config)
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to get formatted config: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to get formatted config: {str(e)}")
 
     @router.get("/sdk/examples")
     async def get_sdk_examples():
@@ -175,7 +183,8 @@ def create_api_router() -> APIRouter:
             examples = get_examples()
             return JSONResponse(content=examples)
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to get examples: {str(e)}")
+            raise HTTPException(status_code=500,
+                                detail=f"Failed to get examples: {str(e)}")
 
     @router.get("/sdk/quick-reference")
     async def get_quick_reference():
@@ -188,7 +197,9 @@ def create_api_router() -> APIRouter:
             reference = generate_quick_reference()
             return JSONResponse(content=reference)
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to get quick reference: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to get quick reference: {str(e)}")
 
     @router.get("/traced/functions")
     async def get_user_traced_functions():
@@ -204,7 +215,9 @@ def create_api_router() -> APIRouter:
             traced = get_traced_functions()
             return JSONResponse(content=traced)
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to get traced functions: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to get traced functions: {str(e)}")
 
     @router.get("/health")
     async def health_check():

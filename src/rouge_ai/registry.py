@@ -1,14 +1,14 @@
 """Function and decorator registry for SDK introspection.
 
-This module provides a thread-safe global registry to track all decorated functions,
-SDK functions, and configuration options for auto-documentation and API introspection.
+This module provides a thread-safe global registry to track all
+decorated functions, SDK functions, and configuration options.
 """
 
 import inspect
-import threading
-from dataclasses import dataclass, field, is_dataclass, asdict
-from typing import Any, Callable, Dict, List, Optional, get_type_hints
 import json
+import threading
+from dataclasses import asdict, dataclass, field, is_dataclass
+from typing import Any, Callable, Dict, List, Optional, get_type_hints
 
 
 @dataclass
@@ -55,7 +55,7 @@ class FunctionMetadata:
     """Code examples showing how to use this function"""
 
     category: str = "general"
-    """Category: 'decorator', 'initialization', 'integration', 'logging', 'tracing', etc."""
+    """Category: 'decorator', 'initialization', 'integration', etc."""
 
     tags: List[str] = field(default_factory=list)
     """Additional tags for filtering/searching"""
@@ -114,7 +114,7 @@ class ConfigFieldMetadata:
 
 
 class FunctionRegistry:
-    """Thread-safe global registry for SDK functions, decorators, and config."""
+    """Thread-safe global registry for functions, decorators, and config."""
 
     _instance: Optional['FunctionRegistry'] = None
     _lock = threading.Lock()
@@ -206,9 +206,13 @@ class FunctionRegistry:
                 for param_name, param in sig.parameters.items():
                     param_type = type_hints.get(param_name, Any)
                     parameters[param_name] = {
-                        "type": str(param_type),
-                        "default": self._make_serializable(param.default) if param.default != inspect.Parameter.empty else None,
-                        "kind": str(param.kind),
+                        "type":
+                        str(param_type),
+                        "default":
+                        self._make_serializable(param.default)
+                        if param.default != inspect.Parameter.empty else None,
+                        "kind":
+                        str(param.kind),
                     }
 
                 # Extract return type
@@ -231,7 +235,7 @@ class FunctionRegistry:
                 )
 
                 self._functions[name] = metadata
-            except Exception as e:
+            except Exception:
                 # Silently fail registration - don't break SDK functionality
                 pass
 
@@ -256,11 +260,17 @@ class FunctionRegistry:
             try:
                 # Extract options schema from dataclass
                 options_schema = {}
-                if options_class and hasattr(options_class, '__dataclass_fields__'):
-                    for field_name, field_info in options_class.__dataclass_fields__.items():
+                if options_class and hasattr(options_class,
+                                             '__dataclass_fields__'):
+                    for field_name, field_info in \
+                            options_class.__dataclass_fields__.items():
                         options_schema[field_name] = {
-                            "type": str(field_info.type),
-                            "default": self._make_serializable(field_info.default) if field_info.default != inspect.Parameter.empty else None,
+                            "type":
+                            str(field_info.type),
+                            "default":
+                            self._make_serializable(field_info.default)
+                            if field_info.default != inspect.Parameter.empty
+                            else None,
                         }
 
                 metadata = DecoratorMetadata(
@@ -299,9 +309,13 @@ class FunctionRegistry:
                 decorator_options = {}
                 if options:
                     if hasattr(options, '__dict__'):
-                        decorator_options = {k: self._make_serializable(v) for k, v in options.__dict__.items()}
+                        decorator_options = {
+                            k: self._make_serializable(v)
+                            for k, v in options.__dict__.items()
+                        }
                     elif is_dataclass(options):
-                        decorator_options = self._make_serializable(asdict(options))
+                        decorator_options = self._make_serializable(
+                            asdict(options))
 
                 metadata = FunctionMetadata(
                     name=name,
@@ -364,7 +378,8 @@ class FunctionRegistry:
         with self._lock:
             return self._functions.copy()
 
-    def get_functions_by_category(self, category: str) -> Dict[str, FunctionMetadata]:
+    def get_functions_by_category(
+            self, category: str) -> Dict[str, FunctionMetadata]:
         """Get functions filtered by category."""
         with self._lock:
             return {
@@ -393,7 +408,8 @@ class FunctionRegistry:
         with self._lock:
             return self._config_fields.copy()
 
-    def get_config_fields_by_category(self, category: str) -> Dict[str, ConfigFieldMetadata]:
+    def get_config_fields_by_category(
+            self, category: str) -> Dict[str, ConfigFieldMetadata]:
         """Get config fields filtered by category."""
         with self._lock:
             return {
@@ -447,13 +463,21 @@ class FunctionRegistry:
                 },
                 "config_fields": {
                     name: {
-                        "name": meta.name,
-                        "type_hint": meta.type_hint,
-                        "default_value": str(meta.default_value) if meta.default_value is not None else None,
-                        "description": meta.description,
-                        "required": meta.required,
-                        "category": meta.category,
-                        "env_var": meta.env_var,
+                        "name":
+                        meta.name,
+                        "type_hint":
+                        meta.type_hint,
+                        "default_value":
+                        str(meta.default_value)
+                        if meta.default_value is not None else None,
+                        "description":
+                        meta.description,
+                        "required":
+                        meta.required,
+                        "category":
+                        meta.category,
+                        "env_var":
+                        meta.env_var,
                     }
                     for name, meta in self._config_fields.items()
                 },

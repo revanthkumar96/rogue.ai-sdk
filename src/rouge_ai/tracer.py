@@ -429,7 +429,9 @@ def trace(options: TraceOptions = TraceOptions()) -> Callable[..., Any]:
         try:
             from rouge_ai.registry import get_registry
             registry = get_registry()
-            registry.register_traced_function(function, decorator_name="trace", options=options)
+            registry.register_traced_function(function,
+                                              decorator_name="trace",
+                                              options=options)
         except Exception:
             # Silently fail - don't break tracing if registry fails
             pass

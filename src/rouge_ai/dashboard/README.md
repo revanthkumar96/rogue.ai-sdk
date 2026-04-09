@@ -7,7 +7,7 @@ The Rouge.ai Dashboard provides a web-based UI for observing and interacting wit
 The dashboard consists of two parts:
 
 1. **Frontend**: React 19 + Vite 6 application (located in `frontend_src/`)
-2. **Backend**: FastAPI server that serves the static files and provides API endpoints (in `server.py`)
+1. **Backend**: FastAPI server that serves the static files and provides API endpoints (in `server.py`)
 
 ## Development
 
@@ -95,6 +95,7 @@ This means Vite and @vitejs/plugin-react versions are incompatible.
 ```
 
 Then run:
+
 ```bash
 npm install
 npm run build
@@ -166,10 +167,10 @@ dashboard/
 ## Build Pipeline
 
 1. Edit React source in `frontend_src/src/`
-2. Run `npm run build` to compile
-3. Copy `dist/*` to `static/`
-4. Commit changes to git
-5. Python package includes `static/` via MANIFEST.in
+1. Run `npm run build` to compile
+1. Copy `dist/*` to `static/`
+1. Commit changes to git
+1. Python package includes `static/` via MANIFEST.in
 
 ## Future Enhancements
 
