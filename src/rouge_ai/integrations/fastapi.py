@@ -1,10 +1,14 @@
 """FastAPI integration for automatic request tracing"""
 
+import logging
+
 from fastapi import FastAPI
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.trace import Span
 
 from rouge_ai.tracer import get_config, get_tracer_provider
+
+logger = logging.getLogger("rouge-fastapi")
 
 # SECURITY: Sensitive headers that should be redacted
 SENSITIVE_HEADERS = {
@@ -226,3 +230,47 @@ def connect_fastapi(app: FastAPI) -> None:
         client_request_hook=client_request_hook,
         client_response_hook=client_response_hook,
     )
+
+    # Auto-mount dashboard if enabled (like Swagger UI at /docs)
+    if config.auto_mount_dashboard:
+        try:
+            mount_dashboard(app, path=config.dashboard_auto_path)
+            logger.info(
+                f"Dashboard auto-mounted at {config.dashboard_auto_path}")
+        except Exception as e:
+            logger.warning(f"Failed to auto-mount dashboard: {e}")
+
+
+def mount_dashboard(app: FastAPI, path: str = None) -> None:
+    """
+    Mount the Rouge Dashboard onto an existing FastAPI application.
+
+    Args:
+        app: The FastAPI application to mount the dashboard on.
+        path: Optional path for the dashboard. Defaults to
+              config.dashboard_auto_path ("/rouge") for seamless
+              integration like Swagger UI.
+
+    Example:
+        from fastapi import FastAPI
+        import rouge_ai
+        from rouge_ai import mount_dashboard
+
+        app = FastAPI()
+        rouge_ai.init(service_name="my-service")
+        mount_dashboard(app, path="/rouge")  # Dashboard at /rouge
+    """
+    from rouge_ai.dashboard.server import get_dashboard_app
+
+    config = get_config()
+    if config is None:
+        raise RuntimeError(
+            "Configuration not available. Call rouge_ai.init() first.")
+
+    # Use provided path, or auto_path, or fallback to dashboard_path
+    target_path = path or config.dashboard_auto_path
+    dashboard_app = get_dashboard_app(config=config)
+
+    app.mount(target_path, dashboard_app)
+    # Using logger if available, otherwise print
+    logger.info(f"Rouge Dashboard mounted at {target_path}")

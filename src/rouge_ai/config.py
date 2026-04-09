@@ -67,6 +67,13 @@ class RougeConfig:
     # Sanitize sensitive data in telemetry
     sanitize_telemetry_data: bool = True
 
+    # Dashboard Configuration
+    dashboard_username: str | None = None
+    dashboard_password: str | None = None
+    dashboard_path: str = "/rouge_ai_dashboard"
+    auto_mount_dashboard: bool = True
+    dashboard_auto_path: str = "/rouge"
+
     def __post_init__(self):
         self._name = self.name
         self._sub_name = (f"{self.service_name}-"

@@ -48,7 +48,7 @@ const App = () => {
   const fetchTelemetry = async () => {
     setIsRefreshing(true);
     try {
-      const response = await fetch('/api/telemetry');
+      const response = await fetch('api/telemetry');
       const data = await response.json();
       setTelemetry(data);
     } catch (error) {
