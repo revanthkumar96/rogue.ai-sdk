@@ -47,6 +47,18 @@ def init(**kwargs):
     return provider
 
 
+def connect_fastapi(app):
+    """Connect Rouge to a FastAPI application for automatic tracing."""
+    from rouge_ai.integrations.fastapi import connect_fastapi as _connect_fastapi
+    return _connect_fastapi(app)
+
+
+def mount_dashboard(app, path=None):
+    """Mount the Rouge Dashboard onto a FastAPI application."""
+    from rouge_ai.integrations.fastapi import mount_dashboard as _mount_dashboard
+    return _mount_dashboard(app, path=path)
+
+
 __all__ = [
     '__version__',
     'init',
@@ -55,6 +67,9 @@ __all__ = [
     'get_logger',
     'shutdown',
     'launch_dashboard',
+    'connect_fastapi',
+    'mount_dashboard',
     'RougeConfig',
     'TraceOptions',
 ]
+
