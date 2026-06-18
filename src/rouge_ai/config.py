@@ -70,8 +70,9 @@ class RougeConfig:
     # Dashboard Configuration
     dashboard_username: str | None = None
     dashboard_password: str | None = None
-    dashboard_path: str = "/rouge_ai_dashboard"
+    # Whether connect_fastapi() auto-attaches the dashboard (Swagger-style)
     auto_mount_dashboard: bool = True
+    # Path prefix the dashboard is attached at
     dashboard_auto_path: str = "/rouge"
 
     def __post_init__(self):

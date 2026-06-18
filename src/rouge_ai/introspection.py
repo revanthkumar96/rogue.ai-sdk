@@ -258,7 +258,7 @@ def _register_config_fields() -> None:
                                "Dashboard HTTP basic auth username", False),
         "dashboard_password": ("dashboard",
                                "Dashboard HTTP basic auth password", False),
-        "dashboard_path": ("dashboard", "Dashboard mount path", False),
+        "dashboard_auto_path": ("dashboard", "Dashboard mount path", False),
     }
 
     for field_name, field_info in config_fields.items():

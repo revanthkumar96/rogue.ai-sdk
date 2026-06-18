@@ -126,7 +126,7 @@ def generate_config_schema_formatted() -> Dict[str, Any]:
         "dashboard": {
             "dashboard_username": "admin",
             "dashboard_password": "secret",
-            "dashboard_path": "/rouge",
+            "dashboard_auto_path": "/rouge",
         },
     }
 
