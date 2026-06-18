@@ -162,7 +162,7 @@ class TestTracerInitialization(unittest.TestCase):
                                  'test-service')
 
     def test_multiple_init_calls_with_different_params(self):
-        """Test that init() calls with different parameters reinitialize"""
+        """Test that init() with different params updates config in place"""
         with tempfile.TemporaryDirectory() as temp_dir:
             with patch('rouge_ai.utils.config.Path.cwd',
                        return_value=Path(temp_dir)):
@@ -180,8 +180,9 @@ class TestTracerInitialization(unittest.TestCase):
                     github_repo_name='different-repo',
                     github_commit_hash='differentcommit456')
 
-                # Should return different instances (reinitialization occurred)
-                self.assertIsNot(tracer_provider1, tracer_provider2)
+                # Re-init reuses the same provider (B1: no clobbering of the
+                # global); only the configuration is updated.
+                self.assertIs(tracer_provider1, tracer_provider2)
 
                 # Configuration should be updated to new values
                 self.assertEqual(rouge_ai.tracer._config.service_name,
@@ -239,10 +240,56 @@ class TestTracerInitialization(unittest.TestCase):
                 self.assertEqual(rouge_ai.tracer._config.github_owner,
                                  'yaml-owner')  # From YAML
 
-                # Should return new tracer provider
+                # Re-init reuses the same provider (B1); config is overridden.
                 self.assertIsNotNone(tracer_provider2)
-                self.assertNotEqual(tracer_provider1,
-                                    tracer_provider2)  # Different instances
+                self.assertIs(tracer_provider1, tracer_provider2)
+
+    def test_reinit_reuses_provider_not_clobbered(self):
+        """B1: re-init with new kwargs reuses the provider (no clobber)."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch('rouge_ai.utils.config.Path.cwd',
+                       return_value=Path(temp_dir)):
+                tp1 = init(service_name='svc-a', local_mode=True,
+                           enable_span_cloud_export=False,
+                           enable_log_cloud_export=False)
+                tp2 = init(service_name='svc-b', local_mode=True,
+                           enable_span_cloud_export=False,
+                           enable_log_cloud_export=False)
+                self.assertIs(tp1, tp2)
+                self.assertEqual(rouge_ai.tracer._config.service_name, 'svc-b')
+
+    def test_init_does_not_override_existing_provider(self):
+        """B1: init() reuses an externally-set provider, not clobbering it."""
+        from opentelemetry import trace as otel_trace
+        from opentelemetry.sdk.trace import TracerProvider as SDKTracerProvider
+        external = SDKTracerProvider()
+        otel_trace.set_tracer_provider(external)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch('rouge_ai.utils.config.Path.cwd',
+                       return_value=Path(temp_dir)):
+                init(service_name='svc', local_mode=True,
+                     enable_span_cloud_export=False,
+                     enable_log_cloud_export=False)
+        self.assertIs(otel_trace.get_tracer_provider(), external)
+
+    def test_shutdown_resets_to_proxy_not_noop(self):
+        """B2: shutdown resets to a Proxy provider so re-init works again."""
+        from opentelemetry import trace as otel_trace
+        from opentelemetry.trace import ProxyTracerProvider
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch('rouge_ai.utils.config.Path.cwd',
+                       return_value=Path(temp_dir)):
+                init(service_name='svc', local_mode=True,
+                     enable_span_cloud_export=False,
+                     enable_log_cloud_export=False)
+                shutdown()
+                self.assertIsInstance(otel_trace.get_tracer_provider(),
+                                      ProxyTracerProvider)
+                tp = init(service_name='svc2', local_mode=True,
+                          enable_span_cloud_export=False,
+                          enable_log_cloud_export=False)
+                self.assertIsNotNone(tp)
+                self.assertIs(otel_trace.get_tracer_provider(), tp)
 
 
 if __name__ == '__main__':

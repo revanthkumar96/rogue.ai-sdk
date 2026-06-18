@@ -20,6 +20,8 @@ class TestTracer(unittest.TestCase):
             tracer_module._tracer_provider.shutdown()
         tracer_module._tracer_provider = None
         tracer_module._config = None
+        # Reset the OTel process-global so each test gets a fresh provider.
+        tracer_module._reset_global_tracer_provider()
 
         # Clean up logger state thoroughly
         if logger_module._global_logger:
@@ -40,6 +42,8 @@ class TestTracer(unittest.TestCase):
             tracer_module._tracer_provider.shutdown()
         tracer_module._tracer_provider = None
         tracer_module._config = None
+        # Reset the OTel process-global so the next test gets a fresh provider.
+        tracer_module._reset_global_tracer_provider()
 
         # Clean up logger state thoroughly
         if logger_module._global_logger:

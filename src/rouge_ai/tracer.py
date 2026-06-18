@@ -2,6 +2,7 @@ import inspect
 import json
 import os
 import sys
+import threading
 from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import wraps
@@ -20,7 +21,7 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import (BatchSpanProcessor,
                                             ConsoleSpanExporter,
                                             SimpleSpanProcessor)
-from opentelemetry.trace import get_current_span
+from opentelemetry.trace import ProxyTracerProvider, get_current_span
 from opentelemetry.trace.propagation.tracecontext import \
     TraceContextTextMapPropagator
 from opentelemetry.util._once import Once
@@ -62,6 +63,8 @@ def tracer_verbose_error(config: RougeConfig, message: str, *args:
 _tracer_provider: TracerProvider | None = None
 _config: RougeConfig | None = None
 _credential_manager: CredentialManager | None = None
+# Guards the one place that resets OTel's process-global provider.
+_lock = threading.Lock()
 
 
 @dataclass
@@ -149,20 +152,13 @@ def init(**kwargs: Any) -> TracerProvider:
     if _tracer_provider is not None and len(kwargs) == 0:
         return _tracer_provider
 
-    # If kwargs are provided and we're already initialized,
-    # reset everything properly
-    if _tracer_provider is not None and len(kwargs) > 0:
-        # Shutdown the old tracer provider
-        _tracer_provider.shutdown()
-        _tracer_provider = None
-        _config = None
-
-        # Reset OpenTelemetry's global state to avoid override warning
-        otel_trace._TRACER_PROVIDER = None
-        otel_trace._TRACER_PROVIDER_SET_ONCE = Once()
-
-        # Also shutdown the logger so it gets reinitialized
-        # with new config (including token)
+    # If kwargs are provided while already initialized, reconfigure in place:
+    # refresh config + logger but REUSE the existing provider. OpenTelemetry is
+    # one-provider-per-process, and recreating/clobbering it would orphan
+    # tracers already held by instrumented libraries (FastAPI, LLM SDKs).
+    reusing_provider = _tracer_provider is not None and len(kwargs) > 0
+    if reusing_provider:
+        # Logger is reinitialized with the new config (e.g. a new token).
         shutdown_logger()
 
     # Load configuration from YAML file first
@@ -208,6 +204,13 @@ def init(**kwargs: Any) -> TracerProvider:
     global _credential_manager
     _credential_manager = CredentialManager(config)
 
+    # Re-init: a provider already exists — keep it (config + logger were
+    # refreshed above) and return without recreating it or touching the global.
+    if reusing_provider:
+        tracer_verbose(config,
+                       "Reusing existing tracer provider for re-init")
+        return _tracer_provider
+
     # Create resource with service information
     tracer_verbose(config, "Creating OpenTelemetry resource...")
 
@@ -230,9 +233,23 @@ def init(**kwargs: Any) -> TracerProvider:
 
     resource = Resource(attributes=resource_attributes)
 
-    # Create tracer provider
-    tracer_verbose(config, "Creating tracer provider...")
-    provider = TracerProvider(resource=resource)
+    # Create or reuse the tracer provider. Mirrors traceloop/openllmetry
+    # (tracing.py:460-480): create + set the global only when none is installed
+    # yet; otherwise reuse the existing provider instead of overriding the
+    # global (which OpenTelemetry disallows, and which would orphan already-
+    # instrumented libraries).
+    current_provider = otel_trace.get_tracer_provider()
+    if isinstance(current_provider, ProxyTracerProvider):
+        tracer_verbose(config, "Creating tracer provider...")
+        provider = TracerProvider(resource=resource)
+        otel_trace.set_tracer_provider(provider)
+    elif hasattr(current_provider, "add_span_processor"):
+        tracer_verbose(config, "Reusing existing global tracer provider...")
+        provider = current_provider
+    else:
+        tracer_verbose(config, "Creating tracer provider...")
+        provider = TracerProvider(resource=resource)
+        otel_trace.set_tracer_provider(provider)
 
     # Add span processors based on configuration
     if config.enable_span_console_export:
@@ -257,9 +274,6 @@ def init(**kwargs: Any) -> TracerProvider:
         provider.add_span_processor(batch_processor)
         tracer_verbose(config, "Added batch span processor for cloud export")
 
-    # Set as global tracer provider
-    tracer_verbose(config, "Setting global tracer provider...")
-    otel_trace.set_tracer_provider(provider)
     _tracer_provider = provider
 
     # Configure propagators to enable distributed tracing
@@ -282,6 +296,20 @@ def init(**kwargs: Any) -> TracerProvider:
     return provider
 
 
+def _reset_global_tracer_provider() -> None:
+    """Reset OpenTelemetry's process-global tracer provider.
+
+    OpenTelemetry intentionally lets ``set_tracer_provider`` take effect only
+    once and exposes no public API to replace the global provider. We clear it
+    so a later ``init()`` (e.g. after ``shutdown()``) can install a fresh one.
+    This is the single place that touches OTel internals; it is lock-guarded to
+    stay thread-safe.
+    """
+    with _lock:
+        otel_trace._TRACER_PROVIDER_SET_ONCE = Once()
+        otel_trace._TRACER_PROVIDER = None
+
+
 def shutdown_tracing() -> None:
     """
     Shutdown tracing and flush any pending spans.
@@ -300,8 +328,10 @@ def shutdown_tracing() -> None:
         _config = None
         _credential_manager = None
 
-    # Reset OpenTelemetry's global tracer provider to allow reinitialization
-    otel_trace.set_tracer_provider(otel_trace.NoOpTracerProvider())
+    # Allow a later init() to install a fresh provider. Replaces the previous
+    # set_tracer_provider(NoOpTracerProvider()) call, which was a silent no-op
+    # once a real provider had already been set (and used a deprecated alias).
+    _reset_global_tracer_provider()
 
 
 def shutdown() -> None:
