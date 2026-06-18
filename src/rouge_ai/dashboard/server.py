@@ -3,11 +3,10 @@ import os
 import secrets
 
 import uvicorn
-from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from fastapi.staticfiles import StaticFiles
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -21,15 +20,50 @@ MAX_ITEMS = 500
 security = HTTPBasic()
 
 
-def get_dashboard_app(config=None):
+def _static_dir() -> str:
+    """Absolute path to the built frontend static directory."""
+    return os.path.join(os.path.dirname(__file__), "static")
+
+
+def _safe_static_file(static_dir: str, rel_path: str) -> str | None:
+    """Resolve ``rel_path`` under ``static_dir``, guarding against traversal.
+
+    Returns the absolute file path if it is a real file located inside
+    ``static_dir``, otherwise None.
     """
-    Creates and returns the Rouge Dashboard FastAPI application.
+    static_root = os.path.realpath(static_dir)
+    candidate = os.path.realpath(os.path.join(static_root, rel_path))
+    # Ensure the resolved path stays within the static root
+    if os.path.commonpath([static_root, candidate]) != static_root:
+        return None
+    if os.path.isfile(candidate):
+        return candidate
+    return None
+
+
+def create_dashboard_router(config=None) -> APIRouter:
+    """Create the Rouge dashboard as a FastAPI ``APIRouter``.
+
+    The router bundles telemetry ingestion endpoints, the SDK-documentation
+    API, and the single-page-app frontend. It is designed to be attached to
+    an existing application via ``app.include_router(router, prefix=...)`` so
+    the dashboard behaves like FastAPI's own ``/docs`` (normal routes, shared
+    middleware/exception handlers, ``root_path`` aware) instead of a mounted
+    sub-application.
 
     Args:
-        config: Optional RougeConfig object containing security settings.
+        config: Optional RougeConfig providing dashboard security settings.
+
+    Returns:
+        Configured APIRouter. The caller supplies the mount ``prefix`` and
+        ``include_in_schema=False`` at ``include_router`` time.
     """
 
-    # Auth dependency
+    # pattern: fastapi@0.137.2 applications.py:1104-1157 (docs as routes,
+    # guarded + include_in_schema=False) — adapted to an APIRouter so the
+    # whole dashboard can be attached to a user's app without app.mount().
+
+    # Auth dependency — only enforced when credentials are configured.
     async def auth_check(
             credentials: HTTPBasicCredentials = Depends(security)):
         if not config or not config.dashboard_username or \
@@ -50,22 +84,15 @@ def get_dashboard_app(config=None):
             )
         return True
 
-    # Use dependencies only if configured
-    app_dependencies = []
+    router_dependencies = []
     if config and config.dashboard_username and config.dashboard_password:
-        app_dependencies = [Depends(auth_check)]
+        router_dependencies = [Depends(auth_check)]
 
-    app = FastAPI(title="Rouge.AI Dashboard", dependencies=app_dependencies)
+    router = APIRouter(dependencies=router_dependencies)
 
-    # Enable CORS for development
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+    # --- Telemetry ingestion (OTLP/HTTP JSON receivers) --------------------
 
-    @app.post("/v1/traces")
+    @router.post("/v1/traces")
     async def collect_traces(request: Request):
         try:
             data = await request.json()
@@ -82,7 +109,7 @@ def get_dashboard_app(config=None):
             },
                                 status_code=400)
 
-    @app.post("/api/ingest")
+    @router.post("/api/ingest")
     async def ingest_telemetry(request: Request):
         try:
             data = await request.json()
@@ -107,7 +134,7 @@ def get_dashboard_app(config=None):
             },
                                 status_code=400)
 
-    @app.post("/v1/logs")
+    @router.post("/v1/logs")
     async def collect_logs(request: Request):
         try:
             data = await request.json()
@@ -124,7 +151,7 @@ def get_dashboard_app(config=None):
             },
                                 status_code=400)
 
-    @app.post("/v1/metrics")
+    @router.post("/v1/metrics")
     async def collect_metrics(request: Request):
         try:
             data = await request.json()
@@ -139,49 +166,57 @@ def get_dashboard_app(config=None):
             },
                                 status_code=400)
 
-    @app.get("/api/telemetry")
+    @router.get("/api/telemetry")
     async def get_telemetry():
         return TELEMETRY_DATA
 
-    # Mount SDK documentation API routes
+    # --- SDK documentation API --------------------------------------------
+    # Mounted as a nested router (kept before the SPA fallback so its routes
+    # win over the catch-all).
     try:
         from rouge_ai.dashboard.api import create_api_router
-        api_router = create_api_router()
-        app.include_router(api_router)
+        router.include_router(create_api_router())
         logger.info("SDK documentation API routes mounted successfully")
     except Exception as e:
         logger.warning(f"Failed to mount SDK documentation API routes: {e}")
 
-    # Path to static files
-    static_dir = os.path.join(os.path.dirname(__file__), "static")
+    # --- Frontend (single-page app) ---------------------------------------
+    # Served via routes returning FileResponse. The build uses relative asset
+    # paths (Vite base "./"), so serving the shell at "{prefix}/" makes the
+    # browser resolve "./assets/..." under the prefix without a StaticFiles
+    # mount. The catch-all is registered LAST so it never shadows the API
+    # routes above.
+    static_dir = _static_dir()
+    has_frontend = os.path.isdir(static_dir) and bool(os.listdir(static_dir))
 
-    if os.path.exists(static_dir) and os.listdir(static_dir):
-        assets_dir = os.path.join(static_dir, "assets")
-        if os.path.exists(assets_dir):
-            app.mount("/assets",
-                      StaticFiles(directory=assets_dir),
-                      name="assets")
+    if has_frontend:
 
-        app.mount("/static", StaticFiles(directory=static_dir), name="static")
+        @router.get("/")
+        async def serve_index():
+            index_file = os.path.join(static_dir, "index.html")
+            if os.path.isfile(index_file):
+                return FileResponse(index_file)
+            return HTMLResponse("Dashboard frontend not found",
+                                status_code=404)
 
-        @app.get("/{full_path:path}")
+        @router.get("/{full_path:path}")
         async def serve_frontend(full_path: str):
-            if full_path.startswith("api/") or full_path.startswith("v1/"):
-                return None
+            # Serve a real static asset if it exists (e.g. assets/*.js,
+            # favicon.svg); otherwise fall back to index.html for client-side
+            # routing. Extensioned paths that don't exist are a real 404.
+            static_file = _safe_static_file(static_dir, full_path)
+            if static_file is not None:
+                return FileResponse(static_file)
 
-            file_path = os.path.join(static_dir, full_path)
-            if os.path.isfile(file_path):
-                return FileResponse(file_path)
-
-            if "." not in full_path.split("/")[-1]:
+            if "." not in os.path.basename(full_path):
                 index_file = os.path.join(static_dir, "index.html")
-                if os.path.exists(index_file):
+                if os.path.isfile(index_file):
                     return FileResponse(index_file)
 
             return HTMLResponse("File not found", status_code=404)
     else:
 
-        @app.get("/")
+        @router.get("/")
         async def root():
             return {
                 "message": "Rouge Dashboard Backend is running",
@@ -189,6 +224,34 @@ def get_dashboard_app(config=None):
                 "status": "Frontend not found"
             }
 
+    return router
+
+
+def get_dashboard_app(config=None) -> FastAPI:
+    """Create a standalone FastAPI app hosting the dashboard.
+
+    Used by :func:`launch_dashboard` / :func:`start_dashboard` to run the
+    dashboard as its own server. Applications that already have a FastAPI app
+    should instead attach the dashboard with
+    ``app.include_router(create_dashboard_router(config), prefix="/rouge",
+    include_in_schema=False)`` — see ``rouge_ai.mount_dashboard``.
+
+    Args:
+        config: Optional RougeConfig object containing security settings.
+    """
+    app = FastAPI(title="Rouge.AI Dashboard")
+
+    # Enable CORS for standalone/development usage. When embedded in a user's
+    # app via include_router this is intentionally NOT applied — the parent
+    # app's CORS policy governs.
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    app.include_router(create_dashboard_router(config=config))
     return app
 
 

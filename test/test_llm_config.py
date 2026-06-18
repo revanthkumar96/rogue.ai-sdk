@@ -1,10 +1,12 @@
 """Tests for LLM instrumentation configuration"""
 
+import os
 import unittest
 from unittest.mock import MagicMock, patch
 
 from rouge_ai.config import RougeConfig
 from rouge_ai.integrations.llm import instrument_llm
+from rouge_ai.tracer import _load_env_config
 
 
 class TestLLMInstrumentationConfig(unittest.TestCase):
@@ -57,6 +59,52 @@ class TestLLMInstrumentationConfig(unittest.TestCase):
         instrument_llm(self.config)
 
         self.assertEqual(mock_import.call_count, 0)
+
+    @patch("builtins.__import__")
+    def test_block_list_excludes_provider(self, mock_import):
+        """A blocked provider is skipped even under allow-all (default)."""
+        mock_import.side_effect = ImportError
+        self.config.llm_block_providers = ["OpenAI"]
+
+        instrument_llm(self.config)
+
+        calls = [call[0][0] for call in mock_import.call_args_list]
+        self.assertNotIn("opentelemetry.instrumentation.openai", calls)
+        # Other providers are still attempted.
+        self.assertIn("opentelemetry.instrumentation.anthropic", calls)
+
+    @patch("builtins.__import__")
+    def test_block_list_overrides_allow_list(self, mock_import):
+        """Block-list wins over allow-list for the same provider."""
+        mock_import.side_effect = ImportError
+        self.config.llm_providers = ["openai", "anthropic"]
+        self.config.llm_block_providers = ["anthropic"]
+
+        instrument_llm(self.config)
+
+        calls = [call[0][0] for call in mock_import.call_args_list]
+        self.assertEqual(calls, ["opentelemetry.instrumentation.openai"])
+
+
+class TestLLMEnvConfig(unittest.TestCase):
+    """LLM instrumentation is configurable via environment variables."""
+
+    def test_llm_providers_parsed_from_env(self):
+        with patch.dict(os.environ,
+                        {"ROUGE_LLM_PROVIDERS": "openai, anthropic"}):
+            cfg = _load_env_config()
+        self.assertEqual(cfg["llm_providers"], ["openai", "anthropic"])
+
+    def test_llm_block_providers_parsed_from_env(self):
+        with patch.dict(os.environ,
+                        {"ROUGE_LLM_BLOCK_PROVIDERS": "cohere,replicate"}):
+            cfg = _load_env_config()
+        self.assertEqual(cfg["llm_block_providers"], ["cohere", "replicate"])
+
+    def test_instrument_llm_bool_parsed_from_env(self):
+        with patch.dict(os.environ, {"ROUGE_INSTRUMENT_LLM": "false"}):
+            cfg = _load_env_config()
+        self.assertIs(cfg["instrument_llm"], False)
 
 
 if __name__ == "__main__":

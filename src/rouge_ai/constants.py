@@ -25,4 +25,8 @@ ENV_VAR_MAPPING = {
     "ROUGE_VERIFICATION_ENDPOINT": "verification_endpoint",
     "ROUGE_TRACER_VERBOSE": "tracer_verbose",
     "ROUGE_LOGGER_VERBOSE": "logger_verbose",
+    # LLM instrumentation (comma-separated lists for the provider fields)
+    "ROUGE_INSTRUMENT_LLM": "instrument_llm",
+    "ROUGE_LLM_PROVIDERS": "llm_providers",
+    "ROUGE_LLM_BLOCK_PROVIDERS": "llm_block_providers",
 }

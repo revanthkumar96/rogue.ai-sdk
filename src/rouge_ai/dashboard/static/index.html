@@ -1,14 +1,295 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>rouge.ai dashboard</title>
-    <script type="module" crossorigin src="./assets/index-DjEV-ine.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-TuE2j6tw.css">
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rouge.AI Dashboard</title>
+  <!--
+    Build-free dashboard: a single self-contained HTML file with inline CSS and
+    vanilla JS. No npm/Vite build, no CDN, no framework — it ships with the
+    Python package and renders by fetching the dashboard's own JSON API.
+    Data is fetched with RELATIVE paths ("api/...") so it works under any mount
+    prefix (e.g. "/rouge") without server-side templating.
+  -->
+  <style>
+    :root {
+      --bg: #0b1020; --panel: #131a2e; --panel-2: #1b2540;
+      --border: #243049; --text: #e6ebf5; --muted: #93a1bd;
+      --blue: #5b8cff; --green: #36d399; --red: #f87272; --amber: #fbbd23;
+      --purple: #a78bfa;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font: 14px/1.5 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    a { color: var(--blue); }
+    .app { display: flex; flex-direction: column; min-height: 100vh; }
+    header {
+      display: flex; align-items: center; gap: 16px;
+      padding: 14px 24px; border-bottom: 1px solid var(--border);
+      background: var(--panel); position: sticky; top: 0; z-index: 5;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+    .logo .mark {
+      width: 28px; height: 28px; border-radius: 8px; display: grid;
+      place-items: center; color: #fff; font-weight: 800;
+      background: linear-gradient(135deg, var(--red), var(--purple));
+    }
+    .live { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 0 rgba(54,211,153,.6); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(54,211,153,.5)} 70%{box-shadow:0 0 0 8px rgba(54,211,153,0)} 100%{box-shadow:0 0 0 0 rgba(54,211,153,0)} }
+    .spacer { flex: 1; }
+    button {
+      font: inherit; color: var(--text); background: var(--panel-2);
+      border: 1px solid var(--border); border-radius: 8px; padding: 7px 12px; cursor: pointer;
+    }
+    button:hover { border-color: var(--blue); }
+    nav.tabs { display: flex; gap: 4px; padding: 10px 24px 0; background: var(--panel); border-bottom: 1px solid var(--border); }
+    nav.tabs button {
+      background: transparent; border: none; border-bottom: 2px solid transparent;
+      border-radius: 0; color: var(--muted); padding: 8px 14px;
+    }
+    nav.tabs button.active { color: var(--text); border-bottom-color: var(--blue); }
+    main { padding: 24px; max-width: 1100px; width: 100%; margin: 0 auto; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 14px; }
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+    .stat .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+    .stat .value { font-size: 28px; font-weight: 700; margin-top: 6px; }
+    .section { margin-top: 22px; }
+    .section h2 { font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin: 0 0 10px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; }
+    td.name { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 600; }
+    .badge.ok { background: rgba(54,211,153,.15); color: var(--green); }
+    .badge.err { background: rgba(248,114,114,.15); color: var(--red); }
+    .badge.warn { background: rgba(251,189,35,.15); color: var(--amber); }
+    .badge.info { background: rgba(91,140,255,.15); color: var(--blue); }
+    .empty { color: var(--muted); padding: 28px; text-align: center; }
+    .search { width: 100%; max-width: 340px; padding: 8px 12px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); }
+    .sdk-item { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; background: var(--panel); }
+    .sdk-item .sig { font-family: ui-monospace, monospace; color: var(--blue); }
+    .sdk-item .doc { color: var(--muted); margin-top: 6px; white-space: pre-wrap; }
+    .muted { color: var(--muted); }
+    .spin { animation: spin 1s linear infinite; display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="logo"><span class="mark">R</span><span>Rouge.AI</span></div>
+      <span class="live"><span class="dot"></span><span id="live-text">Live monitoring</span></span>
+      <span class="spacer"></span>
+      <button id="refresh">↻ Refresh</button>
+    </header>
+
+    <nav class="tabs" id="tabs">
+      <button data-tab="overview" class="active">Overview</button>
+      <button data-tab="traces">Traces</button>
+      <button data-tab="logs">Logs</button>
+      <button data-tab="sdk">SDK Docs</button>
+    </nav>
+
+    <!-- root mount point -->
+    <main id="root"><div class="empty">Loading…</div></main>
+  </div>
+
+  <script>
+    "use strict";
+    const API = "api"; // relative => resolves under the dashboard mount prefix
+    const state = { tab: "overview", telemetry: { traces: [], logs: [], metrics: [] }, sdk: null };
+
+    const el = (tag, attrs = {}, ...kids) => {
+      const n = document.createElement(tag);
+      for (const [k, v] of Object.entries(attrs)) {
+        if (k === "class") n.className = v;
+        else if (k === "html") n.innerHTML = v;
+        else n.setAttribute(k, v);
+      }
+      for (const kid of kids) n.append(kid?.nodeType ? kid : document.createTextNode(kid ?? ""));
+      return n;
+    };
+    const esc = (s) => String(s ?? "");
+
+    // --- OTLP JSON parsing helpers -------------------------------------------
+    function flattenSpans(traces) {
+      const out = [];
+      for (const payload of traces || []) {
+        for (const rs of payload.resourceSpans || []) {
+          for (const ss of rs.scopeSpans || rs.instrumentationLibrarySpans || []) {
+            for (const sp of ss.spans || []) {
+              const start = Number(sp.startTimeUnixNano || 0);
+              const end = Number(sp.endTimeUnixNano || 0);
+              out.push({
+                name: sp.name || "unnamed-span",
+                durationMs: end > start ? (end - start) / 1e6 : null,
+                start,
+                status: sp.status && sp.status.code === 2 ? "err" : "ok",
+              });
+            }
+          }
+        }
+      }
+      return out;
+    }
+    function flattenLogs(logs) {
+      const out = [];
+      for (const payload of logs || []) {
+        for (const rl of payload.resourceLogs || []) {
+          for (const sl of rl.scopeLogs || rl.instrumentationLibraryLogs || []) {
+            for (const lr of sl.logRecords || []) {
+              const sev = (lr.severityText || "INFO").toUpperCase();
+              const body = lr.body ? (lr.body.stringValue ?? JSON.stringify(lr.body)) : "";
+              out.push({ severity: sev, body, time: Number(lr.timeUnixNano || 0) });
+            }
+          }
+        }
+      }
+      return out;
+    }
+    const fmtTime = (nano) => nano ? new Date(nano / 1e6).toLocaleTimeString() : "—";
+    const sevClass = (s) => s === "ERROR" || s === "FATAL" ? "err" : s === "WARN" || s === "WARNING" ? "warn" : "info";
+
+    // --- Views ---------------------------------------------------------------
+    function viewOverview() {
+      const spans = flattenSpans(state.telemetry.traces);
+      const logs = flattenLogs(state.telemetry.logs);
+      const errors = logs.filter((l) => sevClass(l.severity) === "err").length;
+      const metrics = (state.telemetry.metrics || []).length;
+
+      const stat = (label, value, color) =>
+        el("div", { class: "card stat" }, el("div", { class: "label" }, label),
+          el("div", { class: "value", style: color ? `color:${color}` : "" }, String(value)));
+
+      const grid = el("div", { class: "grid" },
+        stat("Spans", spans.length, "var(--blue)"),
+        stat("Logs", logs.length, "var(--green)"),
+        stat("Errors", errors, "var(--red)"),
+        stat("Metric batches", metrics, "var(--purple)"));
+
+      const recent = el("div", { class: "section" }, el("h2", {}, "Recent spans"));
+      if (spans.length === 0) {
+        recent.append(el("div", { class: "card empty" }, "No traces received yet. Point your OTLP exporter here, or call connect_fastapi()."));
+      } else {
+        const table = el("table", {}, el("thead", {}, el("tr", {},
+          el("th", {}, "Span"), el("th", {}, "Duration"), el("th", {}, "Status"))));
+        const tb = el("tbody");
+        for (const s of spans.slice(0, 8)) {
+          tb.append(el("tr", {},
+            el("td", { class: "name" }, s.name),
+            el("td", {}, s.durationMs == null ? "—" : s.durationMs.toFixed(2) + " ms"),
+            el("td", {}, el("span", { class: "badge " + (s.status === "err" ? "err" : "ok") }, s.status === "err" ? "Error" : "OK"))));
+        }
+        table.append(tb);
+        recent.append(el("div", { class: "card" }, table));
+      }
+      return el("div", {}, grid, recent);
+    }
+
+    function listView(rows, columns, placeholder) {
+      const search = el("input", { class: "search", type: "text", placeholder: "Search…" });
+      const tableWrap = el("div", { class: "card" });
+      const render = (filter) => {
+        tableWrap.innerHTML = "";
+        const filtered = filter
+          ? rows.filter((r) => columns.some((c) => esc(c.get(r)).toLowerCase().includes(filter.toLowerCase())))
+          : rows;
+        if (filtered.length === 0) { tableWrap.append(el("div", { class: "empty" }, placeholder)); return; }
+        const table = el("table", {}, el("thead", {}, el("tr", {}, ...columns.map((c) => el("th", {}, c.label)))));
+        const tb = el("tbody");
+        for (const r of filtered) tb.append(el("tr", {}, ...columns.map((c) => c.cell(r))));
+        table.append(tb); tableWrap.append(table);
+      };
+      search.addEventListener("input", (e) => render(e.target.value));
+      render("");
+      return el("div", { class: "section" }, el("div", { style: "margin-bottom:12px" }, search), tableWrap);
+    }
+
+    function viewTraces() {
+      const spans = flattenSpans(state.telemetry.traces);
+      return listView(spans, [
+        { label: "Span", get: (s) => s.name, cell: (s) => el("td", { class: "name" }, s.name) },
+        { label: "Duration", get: (s) => s.durationMs, cell: (s) => el("td", {}, s.durationMs == null ? "—" : s.durationMs.toFixed(2) + " ms") },
+        { label: "Status", get: (s) => s.status, cell: (s) => el("td", {}, el("span", { class: "badge " + (s.status === "err" ? "err" : "ok") }, s.status === "err" ? "Error" : "OK")) },
+      ], "No traces found.");
+    }
+
+    function viewLogs() {
+      const logs = flattenLogs(state.telemetry.logs);
+      return listView(logs, [
+        { label: "Severity", get: (l) => l.severity, cell: (l) => el("td", {}, el("span", { class: "badge " + sevClass(l.severity) }, l.severity)) },
+        { label: "Message", get: (l) => l.body, cell: (l) => el("td", { class: "name" }, l.body) },
+        { label: "Time", get: (l) => l.time, cell: (l) => el("td", { class: "muted" }, fmtTime(l.time)) },
+      ], "No logs found.");
+    }
+
+    function viewSdk() {
+      const wrap = el("div", { class: "section" });
+      if (!state.sdk) { wrap.append(el("div", { class: "card empty" }, "Loading SDK reference…")); return wrap; }
+      const { decorators, functions } = state.sdk;
+      wrap.append(el("h2", {}, "Decorators"));
+      const decs = Object.values(decorators || {});
+      if (!decs.length) wrap.append(el("div", { class: "muted" }, "None registered."));
+      for (const d of decs) {
+        wrap.append(el("div", { class: "sdk-item" },
+          el("div", { class: "sig" }, "@" + (d.name || "")),
+          el("div", { class: "doc" }, (d.docstring || "").trim())));
+      }
+      wrap.append(el("h2", { style: "margin-top:20px" }, "Functions"));
+      const fns = Object.values(functions || {});
+      if (!fns.length) wrap.append(el("div", { class: "muted" }, "None registered."));
+      for (const f of fns) {
+        wrap.append(el("div", { class: "sdk-item" },
+          el("div", { class: "sig" }, (f.qualname || f.name || "") + (f.signature || "")),
+          el("div", { class: "doc" }, (f.docstring || "").trim())));
+      }
+      return wrap;
+    }
+
+    const VIEWS = { overview: viewOverview, traces: viewTraces, logs: viewLogs, sdk: viewSdk };
+
+    function render() {
+      const root = document.getElementById("root");
+      root.innerHTML = "";
+      root.append((VIEWS[state.tab] || viewOverview)());
+    }
+
+    async function fetchTelemetry() {
+      try {
+        const res = await fetch(API + "/telemetry");
+        if (res.ok) state.telemetry = await res.json();
+        document.getElementById("live-text").textContent = "Live monitoring";
+      } catch (e) {
+        document.getElementById("live-text").textContent = "Disconnected";
+      }
+      if (state.tab !== "sdk") render();
+    }
+
+    async function fetchSdk() {
+      try {
+        const res = await fetch(API + "/sdk/schema");
+        if (res.ok) state.sdk = await res.json();
+      } catch (e) { /* SDK docs are optional */ }
+      if (state.tab === "sdk") render();
+    }
+
+    // --- Wiring --------------------------------------------------------------
+    document.getElementById("tabs").addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-tab]");
+      if (!btn) return;
+      state.tab = btn.dataset.tab;
+      for (const b of document.querySelectorAll("nav.tabs button")) b.classList.toggle("active", b === btn);
+      if (state.tab === "sdk" && !state.sdk) fetchSdk();
+      render();
+    });
+    document.getElementById("refresh").addEventListener("click", fetchTelemetry);
+
+    fetchTelemetry();
+    fetchSdk();
+    setInterval(fetchTelemetry, 5000);
+  </script>
+</body>
 </html>

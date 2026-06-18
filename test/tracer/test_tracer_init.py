@@ -1,5 +1,6 @@
 """Tests for rouge_ai initialization behavior"""
 
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -162,7 +163,7 @@ class TestTracerInitialization(unittest.TestCase):
                                  'test-service')
 
     def test_multiple_init_calls_with_different_params(self):
-        """Test that init() calls with different parameters reinitialize"""
+        """Test that init() with different params updates config in place"""
         with tempfile.TemporaryDirectory() as temp_dir:
             with patch('rouge_ai.utils.config.Path.cwd',
                        return_value=Path(temp_dir)):
@@ -180,8 +181,9 @@ class TestTracerInitialization(unittest.TestCase):
                     github_repo_name='different-repo',
                     github_commit_hash='differentcommit456')
 
-                # Should return different instances (reinitialization occurred)
-                self.assertIsNot(tracer_provider1, tracer_provider2)
+                # Re-init reuses the same provider (B1: no clobbering of the
+                # global); only the configuration is updated.
+                self.assertIs(tracer_provider1, tracer_provider2)
 
                 # Configuration should be updated to new values
                 self.assertEqual(rouge_ai.tracer._config.service_name,
@@ -239,10 +241,116 @@ class TestTracerInitialization(unittest.TestCase):
                 self.assertEqual(rouge_ai.tracer._config.github_owner,
                                  'yaml-owner')  # From YAML
 
-                # Should return new tracer provider
+                # Re-init reuses the same provider (B1); config is overridden.
                 self.assertIsNotNone(tracer_provider2)
-                self.assertNotEqual(tracer_provider1,
-                                    tracer_provider2)  # Different instances
+                self.assertIs(tracer_provider1, tracer_provider2)
+
+    def test_reinit_reuses_provider_not_clobbered(self):
+        """B1: re-init with new kwargs reuses the provider (no clobber)."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch('rouge_ai.utils.config.Path.cwd',
+                       return_value=Path(temp_dir)):
+                tp1 = init(service_name='svc-a',
+                           local_mode=True,
+                           enable_span_cloud_export=False,
+                           enable_log_cloud_export=False)
+                tp2 = init(service_name='svc-b',
+                           local_mode=True,
+                           enable_span_cloud_export=False,
+                           enable_log_cloud_export=False)
+                self.assertIs(tp1, tp2)
+                self.assertEqual(rouge_ai.tracer._config.service_name, 'svc-b')
+
+    def test_init_does_not_override_existing_provider(self):
+        """B1: init() reuses an externally-set provider, not clobbering it."""
+        from opentelemetry import trace as otel_trace
+        from opentelemetry.sdk.trace import TracerProvider as SDKTracerProvider
+        external = SDKTracerProvider()
+        otel_trace.set_tracer_provider(external)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch('rouge_ai.utils.config.Path.cwd',
+                       return_value=Path(temp_dir)):
+                init(service_name='svc',
+                     local_mode=True,
+                     enable_span_cloud_export=False,
+                     enable_log_cloud_export=False)
+        self.assertIs(otel_trace.get_tracer_provider(), external)
+
+    def test_shutdown_resets_to_proxy_not_noop(self):
+        """B2: shutdown resets to a Proxy provider so re-init works again."""
+        from opentelemetry import trace as otel_trace
+        from opentelemetry.trace import ProxyTracerProvider
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch('rouge_ai.utils.config.Path.cwd',
+                       return_value=Path(temp_dir)):
+                init(service_name='svc',
+                     local_mode=True,
+                     enable_span_cloud_export=False,
+                     enable_log_cloud_export=False)
+                shutdown()
+                self.assertIsInstance(otel_trace.get_tracer_provider(),
+                                      ProxyTracerProvider)
+                tp = init(service_name='svc2',
+                          local_mode=True,
+                          enable_span_cloud_export=False,
+                          enable_log_cloud_export=False)
+                self.assertIsNotNone(tp)
+                self.assertIs(otel_trace.get_tracer_provider(), tp)
+
+    def test_resource_uses_create_with_env_attributes(self):
+        """B4/B6: Resource.create adds SDK defaults + OTEL env attrs."""
+        env = {"OTEL_RESOURCE_ATTRIBUTES": "custom.tag=xyz"}
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch('rouge_ai.utils.config.Path.cwd',
+                       return_value=Path(temp_dir)):
+                with patch.dict(os.environ, env):
+                    provider = init(service_name='svc',
+                                    local_mode=True,
+                                    enable_span_cloud_export=False,
+                                    enable_log_cloud_export=False)
+                    attrs = dict(provider.resource.attributes)
+        # telemetry.sdk.name is only added by Resource.create (proves B4).
+        self.assertIn("telemetry.sdk.name", attrs)
+        self.assertEqual(attrs.get("telemetry.sdk.language"), "python")
+        # OTEL_RESOURCE_ATTRIBUTES is merged in (proves B6).
+        self.assertEqual(attrs.get("custom.tag"), "xyz")
+        self.assertEqual(attrs.get("service.name"), "svc")
+
+    def test_span_exporter_http_for_https_endpoint(self):
+        """B5: an https endpoint selects the HTTP/protobuf exporter."""
+        from opentelemetry.exporter.otlp.proto.http.trace_exporter import \
+            OTLPSpanExporter as HTTPExporter
+
+        from rouge_ai.config import RougeConfig
+        from rouge_ai.tracer import _create_span_exporter
+        cfg = RougeConfig(service_name='svc',
+                          otlp_endpoint='https://example.com:4318/v1/traces')
+        self.assertIsInstance(_create_span_exporter(cfg), HTTPExporter)
+
+    def test_span_exporter_grpc_for_grpc_scheme(self):
+        """B5: a grpc:// endpoint selects the gRPC exporter."""
+        from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import \
+            OTLPSpanExporter as GRPCExporter
+
+        from rouge_ai.config import RougeConfig
+        from rouge_ai.tracer import _create_span_exporter
+        cfg = RougeConfig(service_name='svc',
+                          otlp_endpoint='grpc://localhost:4317',
+                          allow_insecure_transport=True)
+        self.assertIsInstance(_create_span_exporter(cfg), GRPCExporter)
+
+    def test_span_exporter_protocol_env_override(self):
+        """B5/B6: OTEL_EXPORTER_OTLP_PROTOCOL=grpc forces the gRPC exporter."""
+        from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import \
+            OTLPSpanExporter as GRPCExporter
+
+        from rouge_ai.config import RougeConfig
+        from rouge_ai.tracer import _create_span_exporter
+        cfg = RougeConfig(service_name='svc',
+                          otlp_endpoint='http://localhost:4318/v1/traces',
+                          allow_insecure_transport=True)
+        with patch.dict(os.environ, {"OTEL_EXPORTER_OTLP_PROTOCOL": "grpc"}):
+            self.assertIsInstance(_create_span_exporter(cfg), GRPCExporter)
 
 
 if __name__ == '__main__':

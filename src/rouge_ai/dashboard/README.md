@@ -1,70 +1,40 @@
 # Rouge.ai Dashboard
 
-The Rouge.ai Dashboard provides a web-based UI for observing and interacting with your LLM applications. It displays real-time telemetry (traces, logs, metrics) and provides SDK documentation.
+A web UI for observing your LLM application: real-time telemetry (traces, logs,
+metrics) plus live SDK documentation.
+
+## No build step
+
+The dashboard is a **single self-contained HTML file** — `static/index.html`
+(inline CSS + vanilla JS). There is **no npm/Node, no Vite, no bundler, and no
+CDN dependency**. It ships as plain text in the Python package and renders by
+fetching the dashboard's own JSON API with relative paths (`fetch("api/...")`),
+so it works under any mount prefix (e.g. `/rouge`) without server-side
+templating.
+
+> This was a deliberate choice: a JS build step works on some machines and
+> fails on others (Node versions, lockfiles, native deps). A bundled HTML file
+> always works. The data-driven model mirrors how FastAPI serves Swagger UI
+> (a small HTML shell that fetches a JSON document).
+
+To change the UI, edit `static/index.html` directly. That's the whole workflow.
 
 ## Architecture
 
-The dashboard consists of two parts:
+- **UI:** `static/index.html` — tabs for Overview / Traces / Logs / SDK Docs,
+  polling `api/telemetry` every 5s and reading `api/sdk/schema`.
+- **Backend:** `server.py` exposes the dashboard as a FastAPI `APIRouter`
+  (`create_dashboard_router`) — telemetry ingestion (`/v1/traces`, `/v1/logs`,
+  `/v1/metrics`, `/api/ingest`), retrieval (`/api/telemetry`), the SDK-docs API
+  (`api.py`), and static serving of `static/`.
 
-1. **Frontend**: React 19 + Vite 6 application (located in `frontend_src/`)
-1. **Backend**: FastAPI server that serves the static files and provides API endpoints (in `server.py`)
+The router is attached to a user's app the FastAPI-idiomatic way (as routes via
+`include_router(..., include_in_schema=False)`), not as a mounted sub-app — see
+`rouge_ai.integrations.fastapi.mount_dashboard`.
 
-## Development
+## Usage
 
-### Prerequisites
-
-- Node.js 18+
-- npm 9+
-
-### Setup
-
-```bash
-cd src/rouge_ai/dashboard/frontend_src
-npm install
-```
-
-### Development Mode
-
-Run the frontend dev server with hot reload:
-
-```bash
-npm run dev
-```
-
-This starts Vite dev server at `http://localhost:5173`
-
-### Building for Production
-
-```bash
-npm run build
-```
-
-This compiles and bundles the React app into static files in `frontend_src/dist/`.
-
-**Important**: After building, copy the files to the `static/` directory:
-
-```bash
-cp -r dist/* ../static/
-```
-
-The Python package includes files from `static/` (configured in `MANIFEST.in`).
-
-## Deployment
-
-The dashboard can be launched in two ways:
-
-### 1. Standalone Mode (Separate Port)
-
-```python
-import rouge_ai
-
-rouge_ai.init(service_name="my-app")
-rouge_ai.launch_dashboard(port=10108)
-```
-
-Launches dashboard on `http://localhost:10108`
-
-### 2. Mounted on FastAPI App (Recommended)
+### Mounted on your FastAPI app (recommended)
 
 ```python
 import rouge_ai
@@ -72,110 +42,29 @@ from fastapi import FastAPI
 
 app = FastAPI()
 rouge_ai.init(service_name="my-app")
-rouge_ai.connect_fastapi(app)  # Auto-mounts dashboard at /rouge
+rouge_ai.connect_fastapi(app)  # auto-attaches the dashboard at /rouge
 ```
 
-Dashboard available at `http://localhost:8000/rouge` (same port as your app)
+Dashboard is served at `http://localhost:8000/rouge` (same port as your app).
+Disable with `rouge_ai.init(..., auto_mount_dashboard=False)` or change the path
+with `dashboard_auto_path="/my-path"`.
 
-## Troubleshooting
+### Standalone server
 
-### Build Fails with "Package subpath './internal' is not defined"
+```python
+import rouge_ai
 
-This means Vite and @vitejs/plugin-react versions are incompatible.
-
-**Solution**: Ensure you're using Vite 6.x with @vitejs/plugin-react 4.3.4:
-
-```json
-{
-  "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.4",
-    "vite": "^6.0.0"
-  }
-}
+rouge_ai.init(service_name="my-app")
+rouge_ai.launch_dashboard(port=10108)  # http://localhost:10108
 ```
 
-Then run:
-
-```bash
-npm install
-npm run build
-```
-
-### Build Fails with "Cannot resolve import 'react-is'"
-
-The `recharts` library requires `react-is` as a peer dependency.
-
-**Solution**: Add it to dependencies:
-
-```json
-{
-  "dependencies": {
-    "react-is": "^19.0.0"
-  }
-}
-```
-
-### Dashboard Shows Outdated UI
-
-Make sure you copied the build files to `static/`:
-
-```bash
-cd frontend_src
-npm run build
-cp -r dist/* ../static/
-```
-
-## Dependencies
-
-### Production Dependencies
-
-- **react** 19.2.4 - UI framework
-- **react-dom** 19.2.4 - React DOM renderer
-- **react-is** 19.0.0 - React utilities (required by recharts)
-- **framer-motion** 12.38.0 - Animation library
-- **lucide-react** 0.577.0 - Icon library
-- **recharts** 3.8.0 - Chart library for visualizations
-
-### Development Dependencies
-
-- **vite** 6.0.0 - Build tool and dev server
-- **@vitejs/plugin-react** 4.3.4 - React plugin for Vite
-- **eslint** 9.17.0 - Linter
-- **TypeScript types** - Type definitions for React
-
-## Project Structure
+## Files
 
 ```
 dashboard/
-├── frontend_src/          # React source code
-│   ├── src/
-│   │   ├── App.jsx       # Main app component
-│   │   ├── main.jsx      # Entry point
-│   │   └── index.css     # Global styles
-│   ├── package.json      # Dependencies
-│   ├── vite.config.js    # Vite configuration
-│   └── dist/             # Build output (gitignored)
-├── static/               # Served by FastAPI (committed to git)
-│   ├── index.html
-│   └── assets/
-│       ├── index-*.js
-│       └── index-*.css
-├── server.py             # FastAPI backend
-└── README.md             # This file
+├── server.py          # FastAPI router + standalone app
+├── api.py             # SDK-documentation API routes
+├── static/
+│   └── index.html     # the entire UI (no build artifacts)
+└── README.md
 ```
-
-## Build Pipeline
-
-1. Edit React source in `frontend_src/src/`
-1. Run `npm run build` to compile
-1. Copy `dist/*` to `static/`
-1. Commit changes to git
-1. Python package includes `static/` via MANIFEST.in
-
-## Future Enhancements
-
-- WebSocket support for real-time updates (currently uses polling)
-- Dark/light theme toggle
-- Export traces/logs as JSON/CSV
-- Interactive function replay
-- SDK documentation tab with auto-generated API docs

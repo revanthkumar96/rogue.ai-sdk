@@ -243,11 +243,17 @@ def connect_fastapi(app: FastAPI) -> None:
 
 def mount_dashboard(app: FastAPI, path: str = None) -> None:
     """
-    Mount the Rouge Dashboard onto an existing FastAPI application.
+    Attach the Rouge Dashboard to an existing FastAPI application.
+
+    The dashboard is added as ordinary routes (via ``include_router`` with
+    ``include_in_schema=False``), exactly how FastAPI wires up its own
+    ``/docs`` — not as a mounted sub-application. This keeps the dashboard
+    under the parent app's middleware/exception handlers, out of the user's
+    OpenAPI schema, and ``root_path`` aware.
 
     Args:
-        app: The FastAPI application to mount the dashboard on.
-        path: Optional path for the dashboard. Defaults to
+        app: The FastAPI application to attach the dashboard to.
+        path: Optional path prefix for the dashboard. Defaults to
               config.dashboard_auto_path ("/rouge") for seamless
               integration like Swagger UI.
 
@@ -260,17 +266,19 @@ def mount_dashboard(app: FastAPI, path: str = None) -> None:
         rouge_ai.init(service_name="my-service")
         mount_dashboard(app, path="/rouge")  # Dashboard at /rouge
     """
-    from rouge_ai.dashboard.server import get_dashboard_app
+    from rouge_ai.dashboard.server import create_dashboard_router
 
     config = get_config()
     if config is None:
         raise RuntimeError(
             "Configuration not available. Call rouge_ai.init() first.")
 
-    # Use provided path, or auto_path, or fallback to dashboard_path
+    # Use the provided path, otherwise the configured dashboard_auto_path
     target_path = path or config.dashboard_auto_path
-    dashboard_app = get_dashboard_app(config=config)
 
-    app.mount(target_path, dashboard_app)
-    # Using logger if available, otherwise print
-    logger.info(f"Rouge Dashboard mounted at {target_path}")
+    # pattern: fastapi@0.137.2 applications.py:1119/1136 — register the UI as
+    # routes with include_in_schema=False instead of app.mount(sub_app), so it
+    # never pollutes the user's OpenAPI and shares the parent's stack.
+    router = create_dashboard_router(config=config)
+    app.include_router(router, prefix=target_path, include_in_schema=False)
+    logger.info(f"Rouge Dashboard attached at {target_path}")

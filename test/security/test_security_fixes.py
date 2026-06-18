@@ -23,7 +23,7 @@ class TestConfigSecurity(unittest.TestCase):
                         github_commit_hash="abc12344",
                         otlp_endpoint="http://example.com/traces")
 
-        self.assertIn("Insecure HTTP endpoint", str(context.exception))
+        self.assertIn("Insecure http endpoint", str(context.exception))
 
     def test_https_endpoint_allowed(self):
         """Test that HTTPS endpoints are accepted"""
