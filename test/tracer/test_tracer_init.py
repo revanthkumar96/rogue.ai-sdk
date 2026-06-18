@@ -1,5 +1,6 @@
 """Tests for rouge_ai initialization behavior"""
 
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -290,6 +291,60 @@ class TestTracerInitialization(unittest.TestCase):
                           enable_log_cloud_export=False)
                 self.assertIsNotNone(tp)
                 self.assertIs(otel_trace.get_tracer_provider(), tp)
+
+    def test_resource_uses_create_with_env_attributes(self):
+        """B4/B6: Resource.create adds SDK defaults + OTEL env attrs."""
+        env = {"OTEL_RESOURCE_ATTRIBUTES": "custom.tag=xyz"}
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch('rouge_ai.utils.config.Path.cwd',
+                       return_value=Path(temp_dir)):
+                with patch.dict(os.environ, env):
+                    provider = init(service_name='svc', local_mode=True,
+                                    enable_span_cloud_export=False,
+                                    enable_log_cloud_export=False)
+                    attrs = dict(provider.resource.attributes)
+        # telemetry.sdk.name is only added by Resource.create (proves B4).
+        self.assertIn("telemetry.sdk.name", attrs)
+        self.assertEqual(attrs.get("telemetry.sdk.language"), "python")
+        # OTEL_RESOURCE_ATTRIBUTES is merged in (proves B6).
+        self.assertEqual(attrs.get("custom.tag"), "xyz")
+        self.assertEqual(attrs.get("service.name"), "svc")
+
+    def test_span_exporter_http_for_https_endpoint(self):
+        """B5: an https endpoint selects the HTTP/protobuf exporter."""
+        from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
+            OTLPSpanExporter as HTTPExporter)
+
+        from rouge_ai.config import RougeConfig
+        from rouge_ai.tracer import _create_span_exporter
+        cfg = RougeConfig(service_name='svc',
+                          otlp_endpoint='https://example.com:4318/v1/traces')
+        self.assertIsInstance(_create_span_exporter(cfg), HTTPExporter)
+
+    def test_span_exporter_grpc_for_grpc_scheme(self):
+        """B5: a grpc:// endpoint selects the gRPC exporter."""
+        from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
+            OTLPSpanExporter as GRPCExporter)
+
+        from rouge_ai.config import RougeConfig
+        from rouge_ai.tracer import _create_span_exporter
+        cfg = RougeConfig(service_name='svc',
+                          otlp_endpoint='grpc://localhost:4317',
+                          allow_insecure_transport=True)
+        self.assertIsInstance(_create_span_exporter(cfg), GRPCExporter)
+
+    def test_span_exporter_protocol_env_override(self):
+        """B5/B6: OTEL_EXPORTER_OTLP_PROTOCOL=grpc forces the gRPC exporter."""
+        from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
+            OTLPSpanExporter as GRPCExporter)
+
+        from rouge_ai.config import RougeConfig
+        from rouge_ai.tracer import _create_span_exporter
+        cfg = RougeConfig(service_name='svc',
+                          otlp_endpoint='http://localhost:4318/v1/traces',
+                          allow_insecure_transport=True)
+        with patch.dict(os.environ, {"OTEL_EXPORTER_OTLP_PROTOCOL": "grpc"}):
+            self.assertIsInstance(_create_span_exporter(cfg), GRPCExporter)
 
 
 if __name__ == '__main__':

@@ -115,32 +115,35 @@ class RougeConfig:
                         f"Metadata endpoint not allowed for {endpoint_name}: "
                         f"{endpoint_url}")
 
-                # Allow HTTP only for localhost/127.0.0.1 or with explicit flag
-                if parsed.scheme == "http":
+                # Insecure transport (http or grpc) is allowed only for
+                # localhost/127.0.0.1, or with an explicit opt-in flag. TLS
+                # variants (https/grpcs) are always allowed.
+                if parsed.scheme in ("http", "grpc"):
                     is_localhost = parsed.hostname in [
                         "localhost", "127.0.0.1", "::1"
                     ]
 
                     if not is_localhost and not self.allow_insecure_transport:
-                        msg = (f"Insecure HTTP endpoint detected for "
-                               f"{endpoint_name}: {endpoint_url}\n"
-                               f"Use HTTPS for security, or set "
+                        msg = (f"Insecure {parsed.scheme} endpoint detected "
+                               f"for {endpoint_name}: {endpoint_url}\n"
+                               f"Use a TLS endpoint (https/grpcs), or set "
                                f"allow_insecure_transport=True to "
-                               f"explicitly allow HTTP.")
+                               f"explicitly allow it.")
                         raise ValueError(msg)
 
                     if not is_localhost and self.allow_insecure_transport:
                         # Warn when using insecure transport
-                        msg = (f"[Rouge] WARNING: Using insecure HTTP "
-                               f"endpoint for {endpoint_name}: "
-                               f"{endpoint_url}")
+                        msg = (f"[Rouge] WARNING: Using insecure "
+                               f"{parsed.scheme} endpoint for "
+                               f"{endpoint_name}: {endpoint_url}")
                         print(msg, file=sys.stderr)
 
                 # Ensure valid scheme
-                if parsed.scheme not in ["http", "https"]:
+                if parsed.scheme not in ["http", "https", "grpc", "grpcs"]:
                     raise ValueError(
                         f"Invalid endpoint scheme for {endpoint_name}: "
-                        f"{parsed.scheme}. Must be http or https.")
+                        f"{parsed.scheme}. Must be http, https, grpc, or "
+                        f"grpcs.")
 
             except ValueError:
                 raise

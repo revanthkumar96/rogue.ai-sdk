@@ -132,6 +132,37 @@ def _load_env_config() -> dict[str, Any]:
     return env_config
 
 
+def _create_span_exporter(config: RougeConfig):
+    """Create an OTLP span exporter, choosing HTTP vs gRPC.
+
+    Selection order: the standard ``OTEL_EXPORTER_OTLP_PROTOCOL`` env var
+    (``grpc`` | ``http/protobuf``), then the endpoint URL scheme
+    (``grpc``/``grpcs`` -> gRPC, ``http``/``https`` -> HTTP). Defaults to
+    HTTP/protobuf. The exporter still reads ``OTEL_EXPORTER_OTLP_HEADERS`` /
+    ``OTEL_EXPORTER_OTLP_TIMEOUT`` from the environment.
+
+    pattern: openllmetry traceloop-sdk@0.61.0 tracing.py:315-354
+    """
+    from urllib.parse import urlparse
+
+    endpoint = config.otlp_endpoint
+    scheme = urlparse(endpoint).scheme.lower()
+    protocol = os.getenv("OTEL_EXPORTER_OTLP_PROTOCOL", "").strip().lower()
+
+    if protocol == "grpc" or (not protocol and scheme in ("grpc", "grpcs")):
+        from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
+            OTLPSpanExporter as GRPCSpanExporter)
+        # grpcs => TLS; grpc (or anything else) => insecure
+        insecure = scheme != "grpcs"
+        target = endpoint
+        if "://" in target:
+            target = target.split("://", 1)[-1]
+        return GRPCSpanExporter(endpoint=target, insecure=insecure)
+
+    # Default: HTTP/protobuf
+    return OTLPSpanExporter(endpoint=endpoint)
+
+
 def init(**kwargs: Any) -> TracerProvider:
     r"""Initialize Rouge tracing and logging.
 
@@ -220,7 +251,6 @@ def init(**kwargs: Any) -> TracerProvider:
         "service.github_repo_name": config.github_repo_name,
         "service.version": config.github_commit_hash,
         "service.environment": config.environment,
-        "telemetry.sdk.language": "python",
     }
 
     # Ensure all values are strings as OpenTelemetry requires.
@@ -231,7 +261,9 @@ def init(**kwargs: Any) -> TracerProvider:
         if v is not None and k is not None
     }
 
-    resource = Resource(attributes=resource_attributes)
+    # Resource.create merges OTel SDK defaults (telemetry.sdk.*) and the
+    # standard OTEL_RESOURCE_ATTRIBUTES / OTEL_SERVICE_NAME env vars.
+    resource = Resource.create(resource_attributes)
 
     # Create or reuse the tracer provider. Mirrors traceloop/openllmetry
     # (tracing.py:460-480): create + set the global only when none is installed
@@ -269,7 +301,7 @@ def init(**kwargs: Any) -> TracerProvider:
         tracer_verbose(
             config, f"Creating OTLP span exporter with endpoint: "
             f"{config.otlp_endpoint}")
-        exporter = OTLPSpanExporter(endpoint=config.otlp_endpoint)
+        exporter = _create_span_exporter(config)
         batch_processor = BatchSpanProcessor(exporter)
         provider.add_span_processor(batch_processor)
         tracer_verbose(config, "Added batch span processor for cloud export")
