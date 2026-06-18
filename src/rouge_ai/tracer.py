@@ -119,6 +119,9 @@ def _load_env_config() -> dict[str, Any]:
                         item.strip() for item in value.split(",")
                         if item.strip()
                     ]
+                # Handle float values
+                elif config_field == "traces_sampler_ratio":
+                    env_config[config_field] = float(value)
                 else:
                     # SECURITY FIX: Validate value before using
                     env_config[config_field] = validate_config_value(
@@ -270,17 +273,25 @@ def init(**kwargs: Any) -> TracerProvider:
     # yet; otherwise reuse the existing provider instead of overriding the
     # global (which OpenTelemetry disallows, and which would orphan already-
     # instrumented libraries).
+    # Sampler: an explicit ratio (config or ROUGE_TRACES_SAMPLER_RATIO) wins;
+    # otherwise pass None so the SDK honors OTEL_TRACES_SAMPLER / its default.
+    sampler = None
+    if config.traces_sampler_ratio is not None:
+        from opentelemetry.sdk.trace.sampling import (ParentBased,
+                                                      TraceIdRatioBased)
+        sampler = ParentBased(TraceIdRatioBased(config.traces_sampler_ratio))
+
     current_provider = otel_trace.get_tracer_provider()
     if isinstance(current_provider, ProxyTracerProvider):
         tracer_verbose(config, "Creating tracer provider...")
-        provider = TracerProvider(resource=resource)
+        provider = TracerProvider(resource=resource, sampler=sampler)
         otel_trace.set_tracer_provider(provider)
     elif hasattr(current_provider, "add_span_processor"):
         tracer_verbose(config, "Reusing existing global tracer provider...")
         provider = current_provider
     else:
         tracer_verbose(config, "Creating tracer provider...")
-        provider = TracerProvider(resource=resource)
+        provider = TracerProvider(resource=resource, sampler=sampler)
         otel_trace.set_tracer_provider(provider)
 
     # Add span processors based on configuration
@@ -308,18 +319,18 @@ def init(**kwargs: Any) -> TracerProvider:
 
     _tracer_provider = provider
 
-    # Configure propagators to enable distributed tracing
-    # This is crucial for FastAPI to properly extract trace context from
-    # HTTP headers
-    # and create child spans instead of new root spans
-    tracer_verbose(config,
-                   "Configuring propagators for distributed tracing...")
-    propagator = CompositePropagator([
-        TraceContextTextMapPropagator(
-        ),  # Handles traceparent/tracestate headers (W3C Trace Context)
-        W3CBaggagePropagator(),  # Handles baggage header (W3C Baggage)
-    ])
-    set_global_textmap(propagator)
+    # Configure propagators for distributed tracing. OpenTelemetry's default
+    # global propagator is already W3C tracecontext+baggage and honors
+    # OTEL_PROPAGATORS, so only install ours when the user hasn't customized
+    # propagation via that env var (avoids clobbering a custom setup).
+    if not os.getenv("OTEL_PROPAGATORS"):
+        tracer_verbose(config,
+                       "Configuring propagators for distributed tracing...")
+        propagator = CompositePropagator([
+            TraceContextTextMapPropagator(),
+            W3CBaggagePropagator(),
+        ])
+        set_global_textmap(propagator)
 
     # Automatically instrument LLM providers if available
     instrument_llm(config)

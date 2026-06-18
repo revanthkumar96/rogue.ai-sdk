@@ -31,6 +31,8 @@ class RougeConfig:
     # OpenTelemetry Configuration
     # SECURITY: Changed to HTTPS
     otlp_endpoint: str = "https://localhost:4318/v1/traces"
+    # Head-sampling ratio (0.0-1.0). None => honor OTEL_TRACES_SAMPLER/default.
+    traces_sampler_ratio: float | None = None
 
     # Environment
     environment: str = "development"
