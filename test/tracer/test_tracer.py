@@ -171,6 +171,96 @@ class TestTracer(unittest.TestCase):
         self.assertIn(BatchSpanProcessor, processor_types)
         self.assertNotIn(SimpleSpanProcessor, processor_types)
 
+    # --- B9: capture helpers (pandas-free, valid attribute types) ----------
+
+    def test_flatten_dict_no_pandas(self):
+        """B9: nested dicts flatten without pandas."""
+        from rouge_ai.tracer import _flatten_dict
+        self.assertEqual(_flatten_dict({
+            "a": {
+                "b": 1
+            },
+            "c": 2
+        }), {
+            "a_b": 1,
+            "c": 2
+        })
+
+    def test_coerce_attr_value(self):
+        """B9: values coerce to valid OTel attribute types."""
+        from rouge_ai.tracer import _coerce_attr_value
+        self.assertEqual(_coerce_attr_value("s"), "s")
+        self.assertEqual(_coerce_attr_value(5), 5)
+        self.assertIs(_coerce_attr_value(True), True)
+        # Non-scalars are JSON-encoded into a single string.
+        self.assertEqual(_coerce_attr_value([1, 2]), "[1, 2]")
+        self.assertEqual(_coerce_attr_value({"x": 1}), '{"x": 1}')
+
+    def test_store_dict_truncates_with_env(self):
+        """B9: long values truncate to the OTel length-limit env var."""
+        import os
+
+        from rouge_ai.tracer import _store_dict_in_span
+        span = MagicMock()
+        with patch.dict(os.environ,
+                        {"OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT": "5"}):
+            _store_dict_in_span({"k": "abcdefghij"}, span, flatten=False)
+        stored = span.set_attributes.call_args[0][0]
+        self.assertEqual(stored["k"], "abcde")
+
+    # --- B8: streaming spans cover the full iteration ----------------------
+
+    def _exporter_on_provider(self):
+        from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+        from opentelemetry.sdk.trace.export.in_memory_span_exporter import \
+            InMemorySpanExporter
+
+        import rouge_ai.tracer as tracer_module
+        init(service_name="svc",
+             local_mode=True,
+             enable_span_console_export=False,
+             enable_span_cloud_export=False,
+             enable_log_cloud_export=False)
+        exporter = InMemorySpanExporter()
+        tracer_module._tracer_provider.add_span_processor(
+            SimpleSpanProcessor(exporter))
+        return exporter
+
+    def test_sync_generator_span_covers_full_iteration(self):
+        """B8: a traced generator yields all items and records one span."""
+        from rouge_ai.tracer import TraceOptions, trace
+        exporter = self._exporter_on_provider()
+
+        @trace(TraceOptions(trace_return_value=True))
+        def gen():
+            yield 1
+            yield 2
+
+        self.assertEqual(list(gen()), [1, 2])
+        spans = exporter.get_finished_spans()
+        self.assertEqual(len(spans), 1)
+        self.assertEqual(spans[0].attributes.get("return"), "[1, 2]")
+
+    def test_async_generator_span_covers_full_iteration(self):
+        """B8: a traced async generator yields all items and records a span."""
+        import asyncio
+
+        from rouge_ai.tracer import TraceOptions, trace
+        exporter = self._exporter_on_provider()
+
+        @trace(TraceOptions(trace_return_value=True))
+        async def agen():
+            yield "a"
+            yield "b"
+
+        async def consume():
+            return [x async for x in agen()]
+
+        self.assertEqual(asyncio.run(consume()), ["a", "b"])
+        spans = exporter.get_finished_spans()
+        self.assertEqual(len(spans), 1)
+        self.assertEqual(spans[0].attributes.get("return"), '["a", "b"]')
+
 
 if __name__ == '__main__':
     unittest.main()
