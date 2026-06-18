@@ -250,10 +250,12 @@ class TestTracerInitialization(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             with patch('rouge_ai.utils.config.Path.cwd',
                        return_value=Path(temp_dir)):
-                tp1 = init(service_name='svc-a', local_mode=True,
+                tp1 = init(service_name='svc-a',
+                           local_mode=True,
                            enable_span_cloud_export=False,
                            enable_log_cloud_export=False)
-                tp2 = init(service_name='svc-b', local_mode=True,
+                tp2 = init(service_name='svc-b',
+                           local_mode=True,
                            enable_span_cloud_export=False,
                            enable_log_cloud_export=False)
                 self.assertIs(tp1, tp2)
@@ -268,7 +270,8 @@ class TestTracerInitialization(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             with patch('rouge_ai.utils.config.Path.cwd',
                        return_value=Path(temp_dir)):
-                init(service_name='svc', local_mode=True,
+                init(service_name='svc',
+                     local_mode=True,
                      enable_span_cloud_export=False,
                      enable_log_cloud_export=False)
         self.assertIs(otel_trace.get_tracer_provider(), external)
@@ -280,13 +283,15 @@ class TestTracerInitialization(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             with patch('rouge_ai.utils.config.Path.cwd',
                        return_value=Path(temp_dir)):
-                init(service_name='svc', local_mode=True,
+                init(service_name='svc',
+                     local_mode=True,
                      enable_span_cloud_export=False,
                      enable_log_cloud_export=False)
                 shutdown()
                 self.assertIsInstance(otel_trace.get_tracer_provider(),
                                       ProxyTracerProvider)
-                tp = init(service_name='svc2', local_mode=True,
+                tp = init(service_name='svc2',
+                          local_mode=True,
                           enable_span_cloud_export=False,
                           enable_log_cloud_export=False)
                 self.assertIsNotNone(tp)
@@ -299,7 +304,8 @@ class TestTracerInitialization(unittest.TestCase):
             with patch('rouge_ai.utils.config.Path.cwd',
                        return_value=Path(temp_dir)):
                 with patch.dict(os.environ, env):
-                    provider = init(service_name='svc', local_mode=True,
+                    provider = init(service_name='svc',
+                                    local_mode=True,
                                     enable_span_cloud_export=False,
                                     enable_log_cloud_export=False)
                     attrs = dict(provider.resource.attributes)
@@ -312,8 +318,8 @@ class TestTracerInitialization(unittest.TestCase):
 
     def test_span_exporter_http_for_https_endpoint(self):
         """B5: an https endpoint selects the HTTP/protobuf exporter."""
-        from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
-            OTLPSpanExporter as HTTPExporter)
+        from opentelemetry.exporter.otlp.proto.http.trace_exporter import \
+            OTLPSpanExporter as HTTPExporter
 
         from rouge_ai.config import RougeConfig
         from rouge_ai.tracer import _create_span_exporter
@@ -323,8 +329,8 @@ class TestTracerInitialization(unittest.TestCase):
 
     def test_span_exporter_grpc_for_grpc_scheme(self):
         """B5: a grpc:// endpoint selects the gRPC exporter."""
-        from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
-            OTLPSpanExporter as GRPCExporter)
+        from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import \
+            OTLPSpanExporter as GRPCExporter
 
         from rouge_ai.config import RougeConfig
         from rouge_ai.tracer import _create_span_exporter
@@ -335,8 +341,8 @@ class TestTracerInitialization(unittest.TestCase):
 
     def test_span_exporter_protocol_env_override(self):
         """B5/B6: OTEL_EXPORTER_OTLP_PROTOCOL=grpc forces the gRPC exporter."""
-        from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
-            OTLPSpanExporter as GRPCExporter)
+        from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import \
+            OTLPSpanExporter as GRPCExporter
 
         from rouge_ai.config import RougeConfig
         from rouge_ai.tracer import _create_span_exporter

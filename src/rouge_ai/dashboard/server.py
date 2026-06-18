@@ -3,8 +3,7 @@ import os
 import secrets
 
 import uvicorn
-from fastapi import (APIRouter, Depends, FastAPI, HTTPException, Request,
-                     status)
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials

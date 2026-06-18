@@ -150,8 +150,9 @@ def _create_span_exporter(config: RougeConfig):
     protocol = os.getenv("OTEL_EXPORTER_OTLP_PROTOCOL", "").strip().lower()
 
     if protocol == "grpc" or (not protocol and scheme in ("grpc", "grpcs")):
-        from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
-            OTLPSpanExporter as GRPCSpanExporter)
+        from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import \
+            OTLPSpanExporter as GRPCSpanExporter
+
         # grpcs => TLS; grpc (or anything else) => insecure
         insecure = scheme != "grpcs"
         target = endpoint
@@ -238,8 +239,7 @@ def init(**kwargs: Any) -> TracerProvider:
     # Re-init: a provider already exists — keep it (config + logger were
     # refreshed above) and return without recreating it or touching the global.
     if reusing_provider:
-        tracer_verbose(config,
-                       "Reusing existing tracer provider for re-init")
+        tracer_verbose(config, "Reusing existing tracer provider for re-init")
         return _tracer_provider
 
     # Create resource with service information

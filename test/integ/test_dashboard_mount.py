@@ -87,8 +87,8 @@ class TestDashboardMount(unittest.TestCase):
 
         spec = client.get("/openapi.json").json()
         rouge_paths = [p for p in spec["paths"] if p.startswith("/rouge")]
-        self.assertEqual(
-            rouge_paths, [], f"dashboard leaked into OpenAPI: {rouge_paths}")
+        self.assertEqual(rouge_paths, [],
+                         f"dashboard leaked into OpenAPI: {rouge_paths}")
         self.assertIn("/users", spec["paths"])  # user's own routes survive
 
     def test_spa_shell_served_at_prefix_root(self):
