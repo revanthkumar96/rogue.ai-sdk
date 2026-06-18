@@ -16,6 +16,7 @@ ENV_VAR_MAPPING = {
     "ROUGE_AWS_SESSION_TOKEN": "aws_session_token",
     "ROUGE_AWS_REGION": "aws_region",
     "ROUGE_OTLP_ENDPOINT": "otlp_endpoint",
+    "ROUGE_TRACES_SAMPLER_RATIO": "traces_sampler_ratio",
     "ROUGE_ENVIRONMENT": "environment",
     "ROUGE_ENABLE_SPAN_CONSOLE_EXPORT": "enable_span_console_export",
     "ROUGE_ENABLE_LOG_CONSOLE_EXPORT": "enable_log_console_export",

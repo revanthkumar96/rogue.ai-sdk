@@ -352,6 +352,62 @@ class TestTracerInitialization(unittest.TestCase):
         with patch.dict(os.environ, {"OTEL_EXPORTER_OTLP_PROTOCOL": "grpc"}):
             self.assertIsInstance(_create_span_exporter(cfg), GRPCExporter)
 
+    def test_propagators_not_overridden_when_otel_env_set(self):
+        """B3: honor OTEL_PROPAGATORS - don't override global propagators."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch('rouge_ai.utils.config.Path.cwd',
+                       return_value=Path(temp_dir)):
+                with patch.dict(os.environ,
+                                {"OTEL_PROPAGATORS": "tracecontext"}):
+                    with patch('rouge_ai.tracer.set_global_textmap') as m:
+                        init(service_name='svc',
+                             local_mode=True,
+                             enable_span_cloud_export=False,
+                             enable_log_cloud_export=False)
+                        m.assert_not_called()
+
+    def test_propagators_installed_without_otel_env(self):
+        """B3: install W3C propagators when OTEL_PROPAGATORS is unset."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch('rouge_ai.utils.config.Path.cwd',
+                       return_value=Path(temp_dir)):
+                with patch.dict(os.environ):
+                    os.environ.pop("OTEL_PROPAGATORS", None)
+                    with patch('rouge_ai.tracer.set_global_textmap') as m:
+                        init(service_name='svc',
+                             local_mode=True,
+                             enable_span_cloud_export=False,
+                             enable_log_cloud_export=False)
+                        m.assert_called_once()
+
+    def test_sampler_ratio_config(self):
+        """B7: traces_sampler_ratio installs a ratio-based sampler."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch('rouge_ai.utils.config.Path.cwd',
+                       return_value=Path(temp_dir)):
+                provider = init(service_name='svc',
+                                local_mode=True,
+                                enable_span_cloud_export=False,
+                                enable_log_cloud_export=False,
+                                traces_sampler_ratio=0.25)
+        self.assertIn("0.25", provider.sampler.get_description())
+
+    def test_otel_traces_sampler_env_honored(self):
+        """B6/B7: OTEL_TRACES_SAMPLER is honored when no ratio is set."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch('rouge_ai.utils.config.Path.cwd',
+                       return_value=Path(temp_dir)):
+                with patch.dict(
+                        os.environ, {
+                            "OTEL_TRACES_SAMPLER": "traceidratio",
+                            "OTEL_TRACES_SAMPLER_ARG": "0.1"
+                        }):
+                    provider = init(service_name='svc',
+                                    local_mode=True,
+                                    enable_span_cloud_export=False,
+                                    enable_log_cloud_export=False)
+        self.assertIn("0.1", provider.sampler.get_description())
+
 
 if __name__ == '__main__':
     unittest.main()
