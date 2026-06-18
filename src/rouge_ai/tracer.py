@@ -9,7 +9,6 @@ from functools import wraps
 from typing import Any, Callable, Sequence
 
 import opentelemetry
-import pandas as pd
 from opentelemetry import trace as otel_trace
 from opentelemetry.baggage.propagation import W3CBaggagePropagator
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import \
@@ -534,9 +533,43 @@ def trace(options: TraceOptions = TraceOptions()) -> Callable[..., Any]:
                                         options.flatten_attributes)
                 return ret
 
-        # Return appropriate wrapper based on function type
-        if inspect.iscoroutinefunction(function):
+        @wraps(function)
+        def _trace_gen_wrapper(*args: Any, **kwargs: Any) -> Any:
+            # The span must span the whole stream: a generator function returns
+            # immediately, so without iterating inside the span the span would
+            # end with ~0 duration and miss the streaming work.
+            # pattern: openllmetry traceloop-sdk base.py:278-279
+            with _trace(function, options, *args, **kwargs) as span:
+                collected = [] if options.trace_return_value else None
+                for item in function(*args, **kwargs):
+                    if collected is not None:
+                        collected.append(item)
+                    yield item
+                if collected is not None and span:
+                    _store_dict_in_span({"return": collected}, span,
+                                        options.flatten_attributes)
+
+        @wraps(function)
+        async def _trace_async_gen_wrapper(*args: Any, **kwargs: Any) -> Any:
+            with _trace(function, options, *args, **kwargs) as span:
+                collected = [] if options.trace_return_value else None
+                async for item in function(*args, **kwargs):
+                    if collected is not None:
+                        collected.append(item)
+                    yield item
+                if collected is not None and span:
+                    _store_dict_in_span({"return": collected}, span,
+                                        options.flatten_attributes)
+
+        # Return the wrapper matching the function kind. Generators and async
+        # generators are handled explicitly so streaming spans cover the full
+        # iteration rather than just object creation.
+        if inspect.isasyncgenfunction(function):
+            return _trace_async_gen_wrapper
+        elif inspect.iscoroutinefunction(function):
             return _trace_async_wrapper
+        elif inspect.isgeneratorfunction(function):
+            return _trace_gen_wrapper
         else:
             return _trace_sync_wrapper
 
@@ -550,9 +583,28 @@ def write_attributes_to_current_span(attributes: dict[str, Any]) -> None:
         _store_dict_in_span(attributes, span, flatten=False)
 
 
-def _serialize_dict(d: dict[Any, Any]) -> dict[Any, Any]:
-    """Serializes a dictionary."""
-    return json.loads(json.dumps(d, default=str))
+def _attr_value_length_limit() -> int | None:
+    """Max attribute-value length from the standard OTel env var, if set."""
+    raw = (os.getenv("OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT")
+           or os.getenv("OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT"))
+    if raw:
+        try:
+            return int(raw)
+        except ValueError:
+            return None
+    return None
+
+
+def _coerce_attr_value(value: Any) -> Any:
+    """Coerce a value into a valid OpenTelemetry attribute value.
+
+    OTel attributes accept only bool/str/bytes/int/float (or homogeneous
+    sequences of those); anything else is dropped with a warning. Non-scalar
+    values are JSON-encoded into a single string so nothing is silently lost.
+    """
+    if isinstance(value, bool) or type(value) in (int, float, str, bytes):
+        return value
+    return json.dumps(value, default=str)
 
 
 def _params_to_dict(
@@ -583,16 +635,40 @@ def _params_to_dict(
 
 
 def _store_dict_in_span(data: dict[str, Any], span: Any, flatten: bool = True):
-    """
-    Stores a dictionary in a span (as attributes), optionally flattening it.
+    """Store a dictionary on a span as attributes.
+
+    Flattens nested dicts (optional), coerces every value to a valid OTel
+    attribute type, and truncates long string values to
+    OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT when that env var is set.
     """
     if flatten:
         data = _flatten_dict(data)
-    data = {k: v if v is not None else 'None' for k, v in data.items()}
-    span.set_attributes(_serialize_dict(data))
+    max_len = _attr_value_length_limit()
+    attributes: dict[str, Any] = {}
+    for key, value in data.items():
+        coerced: Any = "None" if value is None else _coerce_attr_value(value)
+        if (max_len is not None and isinstance(coerced, str)
+                and len(coerced) > max_len):
+            coerced = coerced[:max_len]
+        attributes[str(key)] = coerced
+    span.set_attributes(attributes)
 
 
 def _flatten_dict(data: dict[str, Any], sep: str = "_") -> dict[str, Any]:
-    """Flattens a dictionary, joining parent/child keys with `sep`."""
-    flattened = pd.json_normalize(data, sep=sep).to_dict(orient="records")
-    return flattened[0] if len(flattened) > 0 else {}
+    """Flatten a nested dict, joining parent/child keys with ``sep``.
+
+    Pure-Python replacement for pandas.json_normalize (drops the heavy pandas
+    runtime dependency).
+    """
+    flattened: dict[str, Any] = {}
+
+    def _walk(obj: dict[str, Any], parent: str) -> None:
+        for key, value in obj.items():
+            new_key = f"{parent}{sep}{key}" if parent else str(key)
+            if isinstance(value, dict) and value:
+                _walk(value, new_key)
+            else:
+                flattened[new_key] = value
+
+    _walk(data, "")
+    return flattened
