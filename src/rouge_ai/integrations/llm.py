@@ -15,11 +15,15 @@ def instrument_llm(config: RougeConfig) -> None:
         return
 
     def _should_instrument(provider_name: str) -> bool:
+        name = provider_name.lower()
+        # Block-list wins: never instrument an explicitly blocked provider.
+        blocked = [p.lower() for p in (config.llm_block_providers or [])]
+        if name in blocked:
+            return False
+        # Allow-list: if set, only these providers; otherwise instrument all.
         if config.llm_providers is None:
             return True
-        return provider_name.lower() in [
-            p.lower() for p in config.llm_providers
-        ]
+        return name in [p.lower() for p in config.llm_providers]
 
     # Helper for instrumentation
     def _instrument(name: str, module_path: str, class_name: str):

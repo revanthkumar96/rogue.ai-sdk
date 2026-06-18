@@ -57,7 +57,10 @@ class RougeConfig:
 
     # LLM Instrumentation
     instrument_llm: bool = True
+    # Allow-list: if set, ONLY these providers are instrumented (else all).
     llm_providers: list[str] | None = None
+    # Block-list: these providers are never instrumented, even under allow-all.
+    llm_block_providers: list[str] | None = None
 
     # Security Configuration
     allow_insecure_transport: bool = False  # Allow HTTP endpoints explicitly
