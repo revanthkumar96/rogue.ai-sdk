@@ -31,6 +31,12 @@ def _init_local(**overrides):
     return init(**params)
 
 
+def _client(app):
+    """TestClient simulating a localhost client (dashboard is localhost-gated
+    by default when no auth is configured)."""
+    return TestClient(app, client=("127.0.0.1", 50000))
+
+
 class TestDashboardMount(unittest.TestCase):
     """Validate the dashboard is mounted the FastAPI-idiomatic way."""
 
@@ -64,7 +70,7 @@ class TestDashboardMount(unittest.TestCase):
         app = FastAPI()
         _init_local()
         mount_dashboard(app, path="/rouge")
-        client = TestClient(app)
+        client = _client(app)
 
         health = client.get("/rouge/api/health")
         self.assertEqual(health.status_code, 200)
@@ -83,7 +89,7 @@ class TestDashboardMount(unittest.TestCase):
 
         _init_local()
         mount_dashboard(app, path="/rouge")
-        client = TestClient(app)
+        client = _client(app)
 
         spec = client.get("/openapi.json").json()
         rouge_paths = [p for p in spec["paths"] if p.startswith("/rouge")]
@@ -96,7 +102,7 @@ class TestDashboardMount(unittest.TestCase):
         app = FastAPI()
         _init_local()
         mount_dashboard(app, path="/rouge")
-        client = TestClient(app)
+        client = _client(app)
 
         resp = client.get("/rouge/", follow_redirects=True)
         self.assertEqual(resp.status_code, 200)
@@ -107,7 +113,7 @@ class TestDashboardMount(unittest.TestCase):
         app = FastAPI()
         _init_local(auto_mount_dashboard=True, dashboard_auto_path="/rouge")
         connect_fastapi(app)
-        client = TestClient(app)
+        client = _client(app)
         self.assertEqual(client.get("/rouge/api/health").status_code, 200)
 
     def test_auto_mount_can_be_disabled(self):
@@ -115,7 +121,7 @@ class TestDashboardMount(unittest.TestCase):
         app = FastAPI()
         _init_local(auto_mount_dashboard=False)
         connect_fastapi(app)
-        client = TestClient(app)
+        client = _client(app)
         self.assertEqual(client.get("/rouge/api/health").status_code, 404)
 
     def test_dashboard_is_self_contained_build_free_html(self):
@@ -123,7 +129,7 @@ class TestDashboardMount(unittest.TestCase):
         app = FastAPI()
         _init_local()
         mount_dashboard(app, path="/rouge")
-        client = TestClient(app)
+        client = _client(app)
 
         resp = client.get("/rouge/", follow_redirects=True)
         self.assertEqual(resp.status_code, 200)
@@ -141,9 +147,57 @@ class TestDashboardMount(unittest.TestCase):
         app = FastAPI()
         _init_local()
         mount_dashboard(app, path="/rouge")
-        client = TestClient(app)
+        client = _client(app)
         resp = client.get("/rouge/assets/index-DjEV-ine.js")
         self.assertEqual(resp.status_code, 404)
+
+    # --- D1: access control -----------------------------------------------
+
+    def test_remote_request_denied_without_auth(self):
+        """D1: non-localhost access is denied when no auth is configured."""
+        app = FastAPI()
+        _init_local()
+        mount_dashboard(app, path="/rouge")
+        remote = TestClient(app, client=("203.0.113.5", 1234))
+        self.assertEqual(remote.get("/rouge/api/health").status_code, 403)
+
+    def test_remote_allowed_with_allow_remote_flag(self):
+        """D1: dashboard_allow_remote opts into remote access (no auth)."""
+        app = FastAPI()
+        _init_local(dashboard_allow_remote=True)
+        mount_dashboard(app, path="/rouge")
+        remote = TestClient(app, client=("203.0.113.5", 1234))
+        self.assertEqual(remote.get("/rouge/api/health").status_code, 200)
+
+    def test_basic_auth_enforced_when_configured(self):
+        """D1: with credentials, requests require valid HTTP Basic auth."""
+        app = FastAPI()
+        _init_local(dashboard_username="admin", dashboard_password="secret")
+        mount_dashboard(app, path="/rouge")
+        remote = TestClient(app, client=("203.0.113.5", 1234))
+        self.assertEqual(remote.get("/rouge/api/health").status_code, 401)
+        ok = remote.get("/rouge/api/health", auth=("admin", "secret"))
+        self.assertEqual(ok.status_code, 200)
+
+    # --- D2: CORS is not "*" by default -----------------------------------
+
+    def test_standalone_app_has_no_cors_by_default(self):
+        """D2: standalone dashboard adds no CORS middleware by default."""
+        from starlette.middleware.cors import CORSMiddleware
+
+        from rouge_ai.dashboard.server import get_dashboard_app
+        _init_local()
+        app = get_dashboard_app(rouge_ai.tracer.get_config())
+        self.assertNotIn(CORSMiddleware, [m.cls for m in app.user_middleware])
+
+    def test_standalone_app_cors_when_configured(self):
+        """D2: CORS is added only when dashboard_cors_origins is set."""
+        from starlette.middleware.cors import CORSMiddleware
+
+        from rouge_ai.dashboard.server import get_dashboard_app
+        _init_local(dashboard_cors_origins=["http://example.com"])
+        app = get_dashboard_app(rouge_ai.tracer.get_config())
+        self.assertIn(CORSMiddleware, [m.cls for m in app.user_middleware])
 
 
 if __name__ == "__main__":

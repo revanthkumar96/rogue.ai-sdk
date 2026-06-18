@@ -79,6 +79,11 @@ class RougeConfig:
     auto_mount_dashboard: bool = True
     # Path prefix the dashboard is attached at
     dashboard_auto_path: str = "/rouge"
+    # When no dashboard auth is set, allow non-localhost access (default deny).
+    dashboard_allow_remote: bool = False
+    # CORS allow-list for the standalone dashboard. None => no CORS middleware
+    # (the SPA is served same-origin and needs none).
+    dashboard_cors_origins: list[str] | None = None
 
     def __post_init__(self):
         self._name = self.name

@@ -63,14 +63,12 @@ def create_dashboard_router(config=None) -> APIRouter:
     # guarded + include_in_schema=False) — adapted to an APIRouter so the
     # whole dashboard can be attached to a user's app without app.mount().
 
-    # Auth dependency — only enforced when credentials are configured.
+    # Access control. When HTTP Basic credentials are configured we enforce
+    # them (covers local + remote). Otherwise the dashboard exposes telemetry
+    # and SDK internals, so we restrict it to localhost unless the operator
+    # explicitly opts into unauthenticated remote access.
     async def auth_check(
             credentials: HTTPBasicCredentials = Depends(security)):
-        if not config or not config.dashboard_username or \
-                not config.dashboard_password:
-            # If no auth configured, allow access
-            return True
-
         is_correct_username = secrets.compare_digest(credentials.username,
                                                      config.dashboard_username)
         is_correct_password = secrets.compare_digest(credentials.password,
@@ -84,9 +82,23 @@ def create_dashboard_router(config=None) -> APIRouter:
             )
         return True
 
-    router_dependencies = []
+    async def localhost_only(request: Request):
+        client_host = request.client.host if request.client else None
+        is_local = client_host in ("127.0.0.1", "::1", "localhost")
+        if is_local or (config and config.dashboard_allow_remote):
+            return True
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=("Rouge dashboard is restricted to localhost. Configure "
+                    "dashboard_username/password for authenticated remote "
+                    "access, or set dashboard_allow_remote=True to allow "
+                    "unauthenticated remote access."),
+        )
+
     if config and config.dashboard_username and config.dashboard_password:
         router_dependencies = [Depends(auth_check)]
+    else:
+        router_dependencies = [Depends(localhost_only)]
 
     router = APIRouter(dependencies=router_dependencies)
 
@@ -241,15 +253,17 @@ def get_dashboard_app(config=None) -> FastAPI:
     """
     app = FastAPI(title="Rouge.AI Dashboard")
 
-    # Enable CORS for standalone/development usage. When embedded in a user's
-    # app via include_router this is intentionally NOT applied — the parent
-    # app's CORS policy governs.
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+    # CORS is opt-in: only enable it when origins are explicitly configured.
+    # The dashboard SPA is served same-origin and needs no CORS; defaulting to
+    # "*" would expose the API cross-origin.
+    cors_origins = config.dashboard_cors_origins if config else None
+    if cors_origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=cors_origins,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
 
     app.include_router(create_dashboard_router(config=config))
     return app

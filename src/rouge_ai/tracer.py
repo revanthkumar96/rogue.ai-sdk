@@ -108,12 +108,13 @@ def _load_env_config() -> dict[str, Any]:
                         "enable_log_console_export",
                         "enable_span_cloud_export", "enable_log_cloud_export",
                         "local_mode", "tracer_verbose", "logger_verbose",
-                        "instrument_llm"
+                        "instrument_llm", "dashboard_allow_remote"
                 ]:
                     env_config[config_field] = value.lower() in ('true', '1',
                                                                  'yes', 'on')
                 # Handle comma-separated list values
-                elif config_field in ("llm_providers", "llm_block_providers"):
+                elif config_field in ("llm_providers", "llm_block_providers",
+                                      "dashboard_cors_origins"):
                     env_config[config_field] = [
                         item.strip() for item in value.split(",")
                         if item.strip()
