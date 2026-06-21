@@ -209,14 +209,11 @@ def init(**kwargs: Any) -> TracerProvider:
     config_params.update(kwargs)
     config_params.update(env_config)  # env vars have highest priority
 
-    # DEBUG
-    print(f"DEBUG: yaml_config={yaml_config}")
-    print(f"DEBUG: kwargs={kwargs}")
-    print(f"DEBUG: env_config={env_config}")
-    print(f"DEBUG: config_params={config_params}")
-
     if len(config_params) == 0:
-        return
+        raise ValueError(
+            "rouge_ai.init() requires configuration. Provide at least "
+            "service_name (via init(...), a .rouge-config.yaml file, or "
+            "ROUGE_* environment variables).")
 
     config = RougeConfig(**config_params)
 
@@ -454,13 +451,17 @@ def _trace(function: Callable, options: TraceOptions, *args: Any,
         return
 
     with _span as span:
-        # Set AWS X-Ray annotations as individual attributes
-        # Avoid setting hash in local mode
-        if not _config.local_mode and _config._name is not None:
-            span.set_attribute("hash", _config._name)
-        span.set_attribute("service_name", _config.service_name)
-        span.set_attribute("service_environment", _config.environment)
-        span.set_attribute("telemetry_sdk_language", "python")
+        # Guard against _config being cleared concurrently (e.g. shutdown):
+        # an AttributeError here would otherwise be recorded as the span's
+        # error and mask the real cause.
+        if _config is not None:
+            # Set AWS X-Ray annotations as individual attributes
+            # Avoid setting hash in local mode
+            if not _config.local_mode and _config._name is not None:
+                span.set_attribute("hash", _config._name)
+            span.set_attribute("service_name", _config.service_name)
+            span.set_attribute("service_environment", _config.environment)
+            span.set_attribute("telemetry_sdk_language", "python")
 
         if _config and _config.tracer_verbose:
             tracer_verbose(
