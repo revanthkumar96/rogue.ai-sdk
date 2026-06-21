@@ -145,7 +145,9 @@ class TestDashboardMount(unittest.TestCase):
         self.assertIn("viewTraceDetail", body)  # waterfall + span detail
         self.assertIn("wf-row", body)  # waterfall rows
         self.assertIn("allLogs", body)  # logs from span events
-        self.assertIn("barChart", body)  # metrics graph
+        self.assertIn("areaChart", body)  # time-series metric chart
+        self.assertIn("donut", body)  # proportion metric chart
+        self.assertIn("histogram", body)  # latency distribution chart
 
     def test_old_react_bundle_is_not_served(self):
         """C3: the previously-shipped Vite bundle must be gone (404)."""

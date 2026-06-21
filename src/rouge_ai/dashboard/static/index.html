@@ -10,93 +10,132 @@
     by fetching the dashboard's own JSON API with relative paths ("api/..."),
     so it works under any mount prefix (e.g. "/rouge").
 
-    Views: Overview (metrics graphs), Traces (list -> waterfall -> span detail),
-    Logs (sourced from span events, since local-mode logs are span events),
-    SDK Docs (introspected SDK reference).
+    Views: Overview (metric charts), Traces (list -> waterfall -> span detail),
+    Logs (sourced from span events), SDK Docs (introspected SDK reference).
   -->
   <style>
     :root {
-      --bg:#0b1020; --panel:#131a2e; --panel-2:#1b2540; --panel-3:#0f1626;
-      --border:#243049; --text:#e6ebf5; --muted:#93a1bd;
-      --blue:#5b8cff; --green:#36d399; --red:#f87272; --amber:#fbbd23;
-      --purple:#a78bfa; --cyan:#22d3ee; --pink:#f472b6;
+      /* base */
+      --bg:#070710; --bg2:#0d0d1a; --panel:rgba(255,255,255,.035);
+      --panel-solid:#12121f; --panel-2:rgba(255,255,255,.06);
+      --track:#171728; --border:rgba(255,255,255,.09); --border-2:rgba(255,255,255,.14);
+      --text:#f4f5fb; --muted:#9aa1bd; --faint:#6b7194;
+      /* brand (rouge) + data palette */
+      --rose:#fb5d77; --crimson:#e11d48; --indigo:#6d6dfb; --violet:#a855f7;
+      --cyan:#22d3ee; --emerald:#34d399; --amber:#fbbf24; --pink:#ec4899; --sky:#38bdf8;
+      --ok:#34d399; --err:#fb5d77; --warn:#fbbf24;
+      --shadow:0 8px 30px rgba(0,0,0,.45);
     }
     * { box-sizing:border-box; }
-    body { margin:0; background:var(--bg); color:var(--text);
-      font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+    html,body { height:100%; }
+    body {
+      margin:0; color:var(--text);
+      font:14px/1.55 ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      background:
+        radial-gradient(900px 500px at 12% -8%, rgba(225,29,72,.16), transparent 60%),
+        radial-gradient(900px 500px at 100% 0%, rgba(109,109,251,.16), transparent 55%),
+        linear-gradient(180deg,var(--bg),var(--bg2));
+      background-attachment:fixed;
+    }
     .app { display:flex; flex-direction:column; min-height:100vh; }
-    header { display:flex; align-items:center; gap:16px; padding:14px 24px;
-      border-bottom:1px solid var(--border); background:var(--panel);
-      position:sticky; top:0; z-index:5; }
-    .logo { display:flex; align-items:center; gap:10px; font-weight:700; }
-    .logo .mark { width:28px; height:28px; border-radius:8px; display:grid;
-      place-items:center; color:#fff; font-weight:800;
-      background:linear-gradient(135deg,var(--red),var(--purple)); }
-    .live { display:flex; align-items:center; gap:7px; color:var(--muted); font-size:12px; }
-    .dot { width:8px; height:8px; border-radius:50%; background:var(--green);
-      animation:pulse 2s infinite; }
-    @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(54,211,153,.5)}
-      70%{box-shadow:0 0 0 8px rgba(54,211,153,0)} 100%{box-shadow:0 0 0 0 rgba(54,211,153,0)} }
+    header { display:flex; align-items:center; gap:16px; padding:16px 26px;
+      border-bottom:1px solid var(--border);
+      background:rgba(10,10,20,.55); backdrop-filter:blur(14px);
+      -webkit-backdrop-filter:blur(14px); position:sticky; top:0; z-index:6; }
+    .logo { display:flex; align-items:center; gap:11px; font-weight:800; letter-spacing:.2px; font-size:16px; }
+    .logo .mark { width:30px; height:30px; border-radius:9px; display:grid; place-items:center;
+      color:#fff; font-weight:900;
+      background:linear-gradient(135deg,var(--rose),var(--violet));
+      box-shadow:0 4px 16px rgba(225,29,72,.45); }
+    .logo .grad { background:linear-gradient(90deg,#fff,#ffd9e0 40%,#c9c9ff);
+      -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .live { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:12.5px; }
+    .dot { width:8px; height:8px; border-radius:50%; background:var(--emerald);
+      box-shadow:0 0 0 0 rgba(52,211,153,.6); animation:pulse 2.2s infinite; }
+    @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(52,211,153,.5)}
+      70%{box-shadow:0 0 0 9px rgba(52,211,153,0)} 100%{box-shadow:0 0 0 0 rgba(52,211,153,0)} }
     .spacer { flex:1; }
     button { font:inherit; color:var(--text); background:var(--panel-2);
-      border:1px solid var(--border); border-radius:8px; padding:7px 12px; cursor:pointer; }
-    button:hover { border-color:var(--blue); }
-    nav.tabs { display:flex; gap:4px; padding:10px 24px 0; background:var(--panel);
-      border-bottom:1px solid var(--border); }
+      border:1px solid var(--border); border-radius:10px; padding:8px 13px; cursor:pointer;
+      transition:.15s border-color,.15s background,.15s transform; }
+    button:hover { border-color:var(--rose); background:rgba(251,93,119,.10); }
+    button:active { transform:translateY(1px); }
+    nav.tabs { display:flex; gap:2px; padding:12px 26px 0;
+      background:rgba(10,10,20,.35); border-bottom:1px solid var(--border);
+      position:sticky; top:63px; z-index:5; backdrop-filter:blur(10px); }
     nav.tabs button { background:transparent; border:none; border-bottom:2px solid transparent;
-      border-radius:0; color:var(--muted); padding:8px 14px; }
-    nav.tabs button.active { color:var(--text); border-bottom-color:var(--blue); }
-    main { padding:24px; max-width:1180px; width:100%; margin:0 auto; }
-    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; }
-    .card { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px; }
-    .stat .label { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.04em; }
-    .stat .value { font-size:26px; font-weight:700; margin-top:6px; }
+      border-radius:0; color:var(--muted); padding:9px 16px; font-weight:600; }
+    nav.tabs button:hover { color:var(--text); background:transparent; }
+    nav.tabs button.active { color:var(--text); border-bottom-color:var(--rose); }
+    main { padding:26px; max-width:1220px; width:100%; margin:0 auto; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:14px; }
+    .card { background:var(--panel); border:1px solid var(--border); border-radius:16px;
+      padding:18px; box-shadow:var(--shadow); backdrop-filter:blur(8px); }
+    .card h2 { font-size:12px; color:var(--muted); text-transform:uppercase;
+      letter-spacing:.07em; margin:0 0 14px; font-weight:700; }
+    /* KPI cards */
+    .kpi { position:relative; overflow:hidden; }
+    .kpi::after { content:""; position:absolute; inset:0 auto 0 0; width:3px;
+      background:var(--accent,var(--rose)); border-radius:3px; }
+    .kpi .label { color:var(--muted); font-size:11.5px; text-transform:uppercase; letter-spacing:.05em; }
+    .kpi .value { font-size:30px; font-weight:800; margin-top:6px; letter-spacing:-.5px;
+      font-variant-numeric:tabular-nums; }
+    .kpi .sub { color:var(--faint); font-size:11.5px; margin-top:2px; }
     .section { margin-top:22px; }
-    .section h2 { font-size:13px; color:var(--muted); text-transform:uppercase;
-      letter-spacing:.05em; margin:0 0 10px; }
+    .section > h2 { font-size:12px; color:var(--muted); text-transform:uppercase;
+      letter-spacing:.07em; margin:0 0 12px; font-weight:700; }
     table { width:100%; border-collapse:collapse; }
-    th,td { text-align:left; padding:9px 12px; border-bottom:1px solid var(--border); vertical-align:top; }
-    th { color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; }
-    tr.clickable { cursor:pointer; }
+    th,td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--border); vertical-align:top; }
+    th { color:var(--muted); font-weight:600; font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; }
+    tr.clickable { cursor:pointer; transition:.12s background; }
     tr.clickable:hover td { background:var(--panel-2); }
     td.mono,.mono { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
-    .badge { font-size:11px; padding:2px 8px; border-radius:999px; font-weight:600; white-space:nowrap; }
-    .badge.ok { background:rgba(54,211,153,.15); color:var(--green); }
-    .badge.err { background:rgba(248,114,114,.15); color:var(--red); }
-    .badge.warn { background:rgba(251,189,35,.15); color:var(--amber); }
-    .badge.info { background:rgba(91,140,255,.15); color:var(--blue); }
-    .badge.svc { background:rgba(167,139,250,.15); color:var(--purple); }
-    .empty { color:var(--muted); padding:28px; text-align:center; }
-    .muted { color:var(--muted); }
-    .search { width:100%; max-width:340px; padding:8px 12px; background:var(--panel-2);
-      border:1px solid var(--border); border-radius:8px; color:var(--text); }
-    .row { display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap; }
-    .col { flex:1; min-width:280px; }
-    .back { color:var(--blue); cursor:pointer; font-size:13px; }
+    .badge { font-size:11px; padding:2.5px 9px; border-radius:999px; font-weight:700; white-space:nowrap;
+      border:1px solid transparent; }
+    .badge.ok { background:rgba(52,211,153,.14); color:var(--ok); border-color:rgba(52,211,153,.25); }
+    .badge.err { background:rgba(251,93,119,.14); color:var(--err); border-color:rgba(251,93,119,.28); }
+    .badge.warn { background:rgba(251,191,36,.14); color:var(--warn); }
+    .badge.info { background:rgba(109,109,251,.16); color:#a3a3ff; }
+    .badge.svc { background:rgba(168,85,247,.14); color:#c9a3ff; }
+    .empty { color:var(--muted); padding:34px; text-align:center; }
+    .muted { color:var(--muted); } .faint { color:var(--faint); }
+    .search { width:100%; max-width:340px; padding:9px 13px; background:var(--panel-solid);
+      border:1px solid var(--border); border-radius:10px; color:var(--text); outline:none; }
+    .search:focus { border-color:var(--rose); }
+    select.search { cursor:pointer; }
+    .row { display:flex; gap:16px; align-items:stretch; flex-wrap:wrap; }
+    .col { flex:1; min-width:300px; }
+    .col-2 { flex:2; min-width:340px; }
+    .back { color:var(--rose); cursor:pointer; font-size:13px; font-weight:600; }
+    .back:hover { text-decoration:underline; }
+    .chartwrap { width:100%; }
+    .chartwrap svg { width:100%; height:auto; display:block; }
+    .legend { display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color:var(--muted); margin-top:10px; }
+    .legend .sw { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; vertical-align:middle; }
+    .bigstat { display:flex; align-items:baseline; gap:8px; }
+    .bigstat .n { font-size:26px; font-weight:800; font-variant-numeric:tabular-nums; }
     /* waterfall */
-    .wf-row { display:grid; grid-template-columns:340px 1fr 70px; gap:8px;
-      align-items:center; padding:3px 0; cursor:pointer; border-radius:6px; }
+    .wf-row { display:grid; grid-template-columns:330px 1fr 76px; gap:10px; align-items:center;
+      padding:4px 6px; cursor:pointer; border-radius:8px; transition:.12s background; }
     .wf-row:hover { background:var(--panel-2); }
-    .wf-row.sel { background:var(--panel-2); outline:1px solid var(--blue); }
+    .wf-row.sel { background:rgba(251,93,119,.10); outline:1px solid rgba(251,93,119,.4); }
     .wf-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; }
-    .wf-track { position:relative; height:16px; background:var(--panel-3);
-      border-radius:4px; overflow:hidden; }
-    .wf-bar { position:absolute; top:0; height:16px; border-radius:4px; min-width:2px; }
-    .wf-dur { text-align:right; font-size:12px; color:var(--muted); font-family:ui-monospace,monospace; }
-    .kv { display:grid; grid-template-columns:minmax(120px,240px) 1fr; gap:2px 14px; }
+    .wf-track { position:relative; height:18px; background:var(--track); border-radius:5px; overflow:hidden; }
+    .wf-bar { position:absolute; top:0; height:18px; border-radius:5px; min-width:2px;
+      box-shadow:0 0 10px rgba(0,0,0,.3); }
+    .wf-dur { text-align:right; font-size:12px; color:var(--muted); font-family:ui-monospace,monospace;
+      font-variant-numeric:tabular-nums; }
+    .kv { display:grid; grid-template-columns:minmax(120px,230px) 1fr; gap:3px 16px; }
     .kv .k { color:var(--muted); font-size:12px; font-family:ui-monospace,monospace; word-break:break-all; }
     .kv .v { font-size:13px; word-break:break-word; font-family:ui-monospace,monospace; }
-    .legend { display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--muted); margin-top:8px; }
-    .legend .sw { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; }
-    .bars { display:flex; align-items:flex-end; gap:3px; height:120px; }
-    .bars .b { flex:1; background:var(--blue); border-radius:3px 3px 0 0; min-height:2px; }
-    .ev { border-left:2px solid var(--border); padding:4px 0 4px 10px; margin:6px 0; }
+    .ev { border-left:2px solid var(--border-2); padding:5px 0 5px 11px; margin:7px 0; }
+    .pill-row { display:flex; flex-wrap:wrap; gap:6px; }
   </style>
 </head>
 <body>
   <div class="app">
     <header>
-      <div class="logo"><span class="mark">R</span><span>Rouge.AI</span></div>
+      <div class="logo"><span class="mark">R</span><span class="grad">Rouge.AI</span></div>
       <span class="live"><span class="dot"></span><span id="live-text">Live monitoring</span></span>
       <span class="spacer"></span>
       <button id="refresh">↻ Refresh</button>
@@ -113,9 +152,10 @@
   <script>
     "use strict";
     const API = "api";
-    const SVC_COLORS = ["#5b8cff","#a78bfa","#36d399","#22d3ee","#f472b6","#fbbd23","#f87272"];
+    const PALETTE = ["#6d6dfb","#a855f7","#22d3ee","#34d399","#fb5d77","#fbbf24","#ec4899","#38bdf8"];
     const state = { tab:"overview", telemetry:{traces:[],logs:[],metrics:[]},
                     sdk:null, openTrace:null, selSpan:null };
+    let _uid = 0; const uid = () => "g" + (++_uid);
 
     const el = (tag, attrs={}, ...kids) => {
       const n = document.createElement(tag);
@@ -128,6 +168,7 @@
         n.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
       return n;
     };
+    const svgEl = (markup) => { const d=el("div",{class:"chartwrap"}); d.innerHTML=markup; return d; };
 
     // --- OTLP parsing --------------------------------------------------------
     const num = (x) => Number(x||0);
@@ -140,12 +181,7 @@
       if ("arrayValue" in v) return (v.arrayValue.values||[]).map(attrVal).join(", ");
       return JSON.stringify(v);
     }
-    function attrsToObj(list) {
-      const o = {};
-      for (const a of list||[]) o[a.key] = attrVal(a.value);
-      return o;
-    }
-    // Flatten every span across all trace payloads into a rich record.
+    function attrsToObj(list) { const o={}; for (const a of list||[]) o[a.key]=attrVal(a.value); return o; }
     function allSpans() {
       const out = [];
       for (const payload of state.telemetry.traces||[]) {
@@ -154,225 +190,276 @@
           const svc = res["service.name"] || "unknown";
           for (const ss of rs.scopeSpans||rs.instrumentationLibrarySpans||[]) {
             for (const sp of ss.spans||[]) {
-              const start = num(sp.startTimeUnixNano), end = num(sp.endTimeUnixNano);
-              out.push({
-                traceId: sp.traceId, spanId: sp.spanId, parentSpanId: sp.parentSpanId||"",
-                name: sp.name||"span", service: svc, start, end,
+              const start=num(sp.startTimeUnixNano), end=num(sp.endTimeUnixNano);
+              out.push({ traceId:sp.traceId, spanId:sp.spanId, parentSpanId:sp.parentSpanId||"",
+                name:sp.name||"span", service:svc, start, end,
                 durationMs: end>start ? (end-start)/1e6 : 0,
-                error: (sp.status&&sp.status.code===2)||false,
-                attributes: attrsToObj(sp.attributes), events: sp.events||[],
-                statusMsg: (sp.status&&sp.status.message)||"",
-              });
+                error:(sp.status&&sp.status.code===2)||false,
+                attributes:attrsToObj(sp.attributes), events:sp.events||[],
+                statusMsg:(sp.status&&sp.status.message)||"" });
             }
           }
         }
       }
       return out;
     }
-    // Group spans into traces (newest first).
     function traceList() {
-      const spans = allSpans();
-      const byTrace = {};
+      const spans=allSpans(); const byTrace={};
       for (const s of spans) (byTrace[s.traceId] ||= []).push(s);
-      const traces = Object.entries(byTrace).map(([tid, sps]) => {
-        const start = Math.min(...sps.map(s=>s.start));
-        const end = Math.max(...sps.map(s=>s.end));
-        const root = sps.find(s=>!s.parentSpanId || !sps.some(o=>o.spanId===s.parentSpanId)) || sps[0];
-        return { traceId:tid, spans:sps, start, end,
-          durationMs: end>start ? (end-start)/1e6 : 0,
-          root, services:[...new Set(sps.map(s=>s.service))],
-          error: sps.some(s=>s.error), count: sps.length };
+      const traces=Object.entries(byTrace).map(([tid,sps])=>{
+        const start=Math.min(...sps.map(s=>s.start)), end=Math.max(...sps.map(s=>s.end));
+        const root=sps.find(s=>!s.parentSpanId||!sps.some(o=>o.spanId===s.parentSpanId))||sps[0];
+        return { traceId:tid, spans:sps, start, end, durationMs:end>start?(end-start)/1e6:0,
+          root, services:[...new Set(sps.map(s=>s.service))], error:sps.some(s=>s.error), count:sps.length };
       });
-      traces.sort((a,b)=>b.start-a.start);
-      return traces;
+      traces.sort((a,b)=>b.start-a.start); return traces;
     }
-    const svcColor = (svc, all) => SVC_COLORS[(all.indexOf(svc)+SVC_COLORS.length)%SVC_COLORS.length];
-    // All log.* span events as flat log records.
+    const svcColor = (svc, all) => PALETTE[(Math.max(0,all.indexOf(svc)))%PALETTE.length];
     function allLogs() {
-      const logs = [];
-      for (const s of allSpans()) {
-        for (const ev of s.events||[]) {
-          if (!(ev.name||"").startsWith("log")) continue;
-          const a = attrsToObj(ev.attributes);
-          logs.push({
-            level:(a["log.level"]||ev.name.replace("log.","")||"INFO").toUpperCase(),
-            message:a["log.message"]||"", logger:a["log.logger"]||"",
-            time:num(ev.timeUnixNano), traceId:s.traceId, spanId:s.spanId });
-        }
+      const logs=[];
+      for (const s of allSpans()) for (const ev of s.events||[]) {
+        if (!(ev.name||"").startsWith("log")) continue;
+        const a=attrsToObj(ev.attributes);
+        logs.push({ level:(a["log.level"]||ev.name.replace("log.","")||"INFO").toUpperCase(),
+          message:a["log.message"]||"", logger:a["log.logger"]||"", time:num(ev.timeUnixNano),
+          traceId:s.traceId, spanId:s.spanId });
       }
-      logs.sort((a,b)=>b.time-a.time);
-      return logs;
+      logs.sort((a,b)=>b.time-a.time); return logs;
     }
     const fmtTime = (nano)=> nano ? new Date(nano/1e6).toLocaleTimeString() : "—";
     const sevClass = (s)=> (s==="ERROR"||s==="FATAL"||s==="CRITICAL")?"err"
       :(s==="WARN"||s==="WARNING")?"warn":(s==="DEBUG")?"svc":"info";
-    function pct(arr, p) {
-      if (!arr.length) return 0;
-      const s=[...arr].sort((a,b)=>a-b);
-      return s[Math.min(s.length-1, Math.floor(p/100*s.length))];
-    }
+    function pct(arr,p){ if(!arr.length)return 0; const s=[...arr].sort((a,b)=>a-b);
+      return s[Math.min(s.length-1,Math.floor(p/100*s.length))]; }
 
-    // --- SVG charts (no deps) ------------------------------------------------
-    function barChart(values, color) {
-      const max = Math.max(1, ...values);
-      const wrap = el("div",{class:"bars"});
-      (values.length?values:[0]).forEach(v=>{
-        wrap.append(el("div",{class:"b",
-          style:`height:${Math.round(v/max*100)}%;background:${color||"var(--blue)"}`,
-          title:String(v)}));
-      });
+    // --- SVG charts ----------------------------------------------------------
+    // Smooth area + line chart with gradient fill.
+    function areaChart(values, color, opts={}) {
+      const W=620, H=opts.h||150, pad=8;
+      const vals = values.length?values:[0];
+      const max=Math.max(1,...vals), n=vals.length;
+      const X=i=> n>1 ? pad+i*(W-2*pad)/(n-1) : W/2;
+      const Y=v=> H-pad-(v/max)*(H-2*pad-6);
+      // Catmull-Rom -> bezier for smoothness
+      const P=vals.map((v,i)=>[X(i),Y(v)]);
+      let d=`M ${P[0][0].toFixed(1)} ${P[0][1].toFixed(1)}`;
+      for (let i=0;i<P.length-1;i++){
+        const p0=P[i-1]||P[i], p1=P[i], p2=P[i+1], p3=P[i+2]||p2;
+        const c1x=p1[0]+(p2[0]-p0[0])/6, c1y=p1[1]+(p2[1]-p0[1])/6;
+        const c2x=p2[0]-(p3[0]-p1[0])/6, c2y=p2[1]-(p3[1]-p1[1])/6;
+        d+=` C ${c1x.toFixed(1)} ${c1y.toFixed(1)}, ${c2x.toFixed(1)} ${c2y.toFixed(1)}, ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
+      }
+      const area=`${d} L ${X(n-1).toFixed(1)} ${H-pad} L ${X(0).toFixed(1)} ${H-pad} Z`;
+      const g=uid();
+      return svgEl(`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img">
+        <defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${color}" stop-opacity=".40"/>
+          <stop offset="100%" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>
+        <path d="${area}" fill="url(#${g})"/>
+        <path d="${d}" fill="none" stroke="${color}" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>`);
+    }
+    // Donut / pie. segments=[{label,value,color}]
+    function donut(segments, opts={}) {
+      const size=opts.size||168, r=size/2-14, cx=size/2, cy=size/2, C=2*Math.PI*r;
+      const total=segments.reduce((s,x)=>s+x.value,0)||1;
+      let acc=0, arcs="";
+      for (const seg of segments) {
+        const frac=seg.value/total;
+        if (frac<=0) continue;
+        arcs+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${seg.color}"
+          stroke-width="16" stroke-dasharray="${(frac*C).toFixed(2)} ${(C-frac*C).toFixed(2)}"
+          stroke-dashoffset="${(-acc*C).toFixed(2)}" transform="rotate(-90 ${cx} ${cy})"
+          stroke-linecap="butt"/>`;
+        acc+=frac;
+      }
+      const center = opts.center!=null ? opts.center : total;
+      return svgEl(`<svg viewBox="0 0 ${size} ${size}" style="max-width:${size}px;margin:0 auto">
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--track)" stroke-width="16"/>
+        ${arcs}
+        <text x="${cx}" y="${cy-2}" text-anchor="middle" fill="var(--text)"
+          font-size="26" font-weight="800">${center}</text>
+        <text x="${cx}" y="${cy+18}" text-anchor="middle" fill="var(--muted)"
+          font-size="11">${opts.label||""}</text>
+      </svg>`);
+    }
+    // Histogram of values into N bins.
+    function histogram(values, color, bins=12, h=150) {
+      const W=620, pad=8;
+      if (!values.length) return svgEl(`<svg viewBox="0 0 ${W} ${h}"></svg>`);
+      const min=Math.min(...values), max=Math.max(...values)||1;
+      const span=(max-min)||1, counts=new Array(bins).fill(0);
+      for (const v of values){ let b=Math.floor((v-min)/span*bins); if(b>=bins)b=bins-1; if(b<0)b=0; counts[b]++; }
+      const cmax=Math.max(1,...counts), bw=(W-2*pad)/bins;
+      let rects="";
+      counts.forEach((c,i)=>{ const bh=(c/cmax)*(h-2*pad-4);
+        rects+=`<rect x="${(pad+i*bw+1).toFixed(1)}" y="${(h-pad-bh).toFixed(1)}"
+          width="${(bw-2).toFixed(1)}" height="${bh.toFixed(1)}" rx="3" fill="${color}" opacity="${0.45+0.5*c/cmax}"/>`; });
+      return svgEl(`<svg viewBox="0 0 ${W} ${h}" preserveAspectRatio="none">${rects}</svg>`);
+    }
+    // Horizontal ranked bars. items=[{label,value,color}]
+    function hbars(items) {
+      const max=Math.max(1,...items.map(i=>i.value));
+      const wrap=el("div",{});
+      for (const it of items) {
+        wrap.append(el("div",{style:"margin:9px 0"},
+          el("div",{style:"display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px"},
+            el("span",{class:"muted"},it.label), el("span",{class:"mono"},String(it.value))),
+          el("div",{style:"height:9px;background:var(--track);border-radius:6px;overflow:hidden"},
+            el("div",{style:`height:9px;width:${(it.value/max*100).toFixed(1)}%;border-radius:6px;background:${it.color}`}))));
+      }
       return wrap;
     }
 
     // --- Views ---------------------------------------------------------------
     function viewOverview() {
-      const spans = allSpans();
-      const traces = traceList();
-      const logs = allLogs();
-      const durations = traces.map(t=>t.durationMs);
-      const errors = spans.filter(s=>s.error).length;
-      // token usage from gen_ai/llm attributes
-      let tokens = 0;
+      const spans=allSpans(), traces=traceList(), logs=allLogs();
+      const durations=traces.map(t=>t.durationMs);
+      const errs=spans.filter(s=>s.error).length, oks=spans.length-errs;
+      let tokens=0;
       for (const s of spans) for (const [k,v] of Object.entries(s.attributes))
-        if (/token/i.test(k) && /total|usage/i.test(k)) tokens += num(v);
-      // throughput buckets: spans per ~2s over last 20 buckets
-      const now = Math.max(0,...spans.map(s=>s.end));
-      const buckets = new Array(20).fill(0);
-      const span = 2e9; // 2s in ns
-      for (const s of spans) { const idx = 19-Math.floor((now-s.end)/span);
-        if (idx>=0 && idx<20) buckets[idx]++; }
+        if (/token/i.test(k)&&/total|usage/i.test(k)) tokens+=num(v);
+      const now=Math.max(0,...spans.map(s=>s.end));
+      const tBuckets=new Array(24).fill(0), slot=1.5e9;
+      for (const s of spans){ const i=23-Math.floor((now-s.end)/slot); if(i>=0&&i<24)tBuckets[i]++; }
+      const svcAll=[...new Set(spans.map(s=>s.service))];
+      const bySvc={}; for (const s of spans) bySvc[s.service]=(bySvc[s.service]||0)+1;
+      const errRate=spans.length?(errs/spans.length*100):0;
 
-      const stat=(l,v,c)=>el("div",{class:"card stat"},el("div",{class:"label"},l),
-        el("div",{class:"value",style:c?`color:${c}`:""},String(v)));
+      const kpi=(label,value,sub,accent)=>el("div",{class:"card kpi",style:`--accent:${accent}`},
+        el("div",{class:"label"},label), el("div",{class:"value"},String(value)),
+        sub?el("div",{class:"sub"},sub):null);
 
-      const wrap = el("div",{},
+      const wrap=el("div",{},
         el("div",{class:"grid"},
-          stat("Traces",traces.length,"var(--blue)"),
-          stat("Spans",spans.length,"var(--cyan)"),
-          stat("Errors",errors,"var(--red)"),
-          stat("Logs",logs.length,"var(--green)"),
-          stat("LLM tokens",tokens||"—","var(--purple)")),
-        el("div",{class:"row section"},
-          el("div",{class:"col card"},el("h2",{},"Throughput (spans / 2s)"),
-            barChart(buckets,"var(--blue)")),
-          el("div",{class:"col card"},el("h2",{},"Latency (trace ms)"),
-            el("div",{class:"grid"},
-              stat("p50",durations.length?pct(durations,50).toFixed(1):"—"),
-              stat("p95",durations.length?pct(durations,95).toFixed(1):"—"),
-              stat("p99",durations.length?pct(durations,99).toFixed(1):"—")),
-            el("div",{class:"muted",style:"margin-top:8px;font-size:12px"},
-              `error rate: ${spans.length?(errors/spans.length*100).toFixed(1):0}%`))));
+          kpi("Traces",traces.length,"requests","var(--indigo)"),
+          kpi("Spans",spans.length,"operations","var(--cyan)"),
+          kpi("Error rate",errRate.toFixed(1)+"%",`${errs} errors`,"var(--rose)"),
+          kpi("Logs",logs.length,"events","var(--emerald)"),
+          kpi("LLM tokens",tokens?tokens.toLocaleString():"—","usage","var(--violet)")),
 
-      // spans by service
-      const bySvc = {}; for (const s of spans) bySvc[s.service]=(bySvc[s.service]||0)+1;
-      const svcAll = Object.keys(bySvc);
-      const svcSec = el("div",{class:"section"},el("h2",{},"Spans by service"));
-      if (!svcAll.length) svcSec.append(el("div",{class:"card empty"},"No spans yet."));
-      else { const c=el("div",{class:"card"});
-        for (const [svc,n] of Object.entries(bySvc))
-          c.append(el("div",{style:"display:flex;justify-content:space-between;padding:4px 0"},
-            el("span",{},el("span",{class:"badge svc",
-              style:`background:${svcColor(svc,svcAll)}22;color:${svcColor(svc,svcAll)}`},svc)),
-            el("span",{class:"mono"},String(n))));
-        svcSec.append(c); }
-      wrap.append(svcSec);
+        el("div",{class:"row section"},
+          el("div",{class:"col-2 card"},el("h2",{},"Throughput · spans over time"),
+            areaChart(tBuckets,"#6d6dfb")),
+          el("div",{class:"col card"},el("h2",{},"Success vs error"),
+            donut([{label:"ok",value:oks,color:"var(--emerald)"},
+                   {label:"error",value:errs,color:"var(--rose)"}],
+              {center:(100-errRate).toFixed(0)+"%",label:"success"}),
+            el("div",{class:"legend"},
+              el("span",{},el("span",{class:"sw",style:"background:var(--emerald)"}),"OK ("+oks+")"),
+              el("span",{},el("span",{class:"sw",style:"background:var(--rose)"}),"Error ("+errs+")")))),
+
+        el("div",{class:"row section"},
+          el("div",{class:"col-2 card"},el("h2",{},"Latency distribution · trace ms"),
+            histogram(durations,"#22d3ee"),
+            el("div",{class:"legend"},
+              el("span",{},"p50 "+(durations.length?pct(durations,50).toFixed(1):"—")+"ms"),
+              el("span",{},"p95 "+(durations.length?pct(durations,95).toFixed(1):"—")+"ms"),
+              el("span",{},"p99 "+(durations.length?pct(durations,99).toFixed(1):"—")+"ms"))),
+          el("div",{class:"col card"},el("h2",{},"Spans by service"),
+            Object.keys(bySvc).length
+              ? hbars(Object.entries(bySvc).sort((a,b)=>b[1]-a[1])
+                  .map(([s,n])=>({label:s,value:n,color:svcColor(s,svcAll)})))
+              : el("div",{class:"muted"},"No spans yet."))));
+
+      // recent traces
+      const recent=el("div",{class:"section"},el("h2",{},"Recent traces"));
+      if (!traces.length) recent.append(el("div",{class:"card empty"},
+        "No traces yet. Generate traffic, or call connect_fastapi()."));
+      else { const t=el("table",{},el("thead",{},el("tr",{},el("th",{},"Root span"),
+        el("th",{},"Service"),el("th",{},"Spans"),el("th",{},"Duration"),el("th",{},"Status"))));
+        const tb=el("tbody");
+        for (const tr of traces.slice(0,6)) tb.append(el("tr",{class:"clickable",
+          onclick:()=>{state.tab="traces";state.openTrace=tr.traceId;state.selSpan=null;syncTabs();render();}},
+          el("td",{class:"mono"},tr.root.name),
+          el("td",{}, ...tr.services.map(s=>el("span",{class:"badge svc",style:"margin-right:4px"},s))),
+          el("td",{class:"mono"},String(tr.count)),
+          el("td",{class:"mono"},tr.durationMs.toFixed(1)+" ms"),
+          el("td",{},el("span",{class:"badge "+(tr.error?"err":"ok")},tr.error?"Error":"OK"))));
+        t.append(tb); recent.append(el("div",{class:"card"},t)); }
+      wrap.append(recent);
       return wrap;
     }
 
     function viewTraces() {
       if (state.openTrace) return viewTraceDetail(state.openTrace);
-      const traces = traceList();
-      const sec = el("div",{class:"section"});
+      const traces=traceList();
       if (!traces.length) return el("div",{class:"card empty"},
         "No traces yet. Generate traffic, or call connect_fastapi().");
-      const table = el("table",{},el("thead",{},el("tr",{},
-        el("th",{},"Root span"),el("th",{},"Services"),el("th",{},"Spans"),
-        el("th",{},"Duration"),el("th",{},"Status"))));
-      const tb = el("tbody"); const svcAll=[...new Set(traces.flatMap(t=>t.services))];
-      for (const t of traces.slice(0,100)) {
-        tb.append(el("tr",{class:"clickable",onclick:()=>{state.openTrace=t.traceId;state.selSpan=null;render();}},
-          el("td",{class:"mono"},t.root.name),
-          el("td",{}, ...t.services.map(s=>el("span",{class:"badge svc",
-            style:`background:${svcColor(s,svcAll)}22;color:${svcColor(s,svcAll)};margin-right:4px`},s))),
-          el("td",{class:"mono"},String(t.count)),
-          el("td",{class:"mono"},t.durationMs.toFixed(1)+" ms"),
-          el("td",{},el("span",{class:"badge "+(t.error?"err":"ok")},t.error?"Error":"OK"))));
-      }
-      table.append(tb); sec.append(el("div",{class:"card"},table));
-      return sec;
+      const svcAll=[...new Set(traces.flatMap(t=>t.services))];
+      const table=el("table",{},el("thead",{},el("tr",{},el("th",{},"Root span"),
+        el("th",{},"Services"),el("th",{},"Spans"),el("th",{},"Duration"),el("th",{},"Status"))));
+      const tb=el("tbody");
+      for (const t of traces.slice(0,100)) tb.append(el("tr",{class:"clickable",
+        onclick:()=>{state.openTrace=t.traceId;state.selSpan=null;render();}},
+        el("td",{class:"mono"},t.root.name),
+        el("td",{}, ...t.services.map(s=>el("span",{class:"badge svc",
+          style:`background:${svcColor(s,svcAll)}22;color:${svcColor(s,svcAll)};margin-right:4px`},s))),
+        el("td",{class:"mono"},String(t.count)),
+        el("td",{class:"mono"},t.durationMs.toFixed(1)+" ms"),
+        el("td",{},el("span",{class:"badge "+(t.error?"err":"ok")},t.error?"Error":"OK"))));
+      table.append(tb);
+      return el("div",{class:"section"},el("div",{class:"card"},table));
     }
 
     function viewTraceDetail(tid) {
-      const t = traceList().find(x=>x.traceId===tid);
+      const t=traceList().find(x=>x.traceId===tid);
       if (!t) { state.openTrace=null; return viewTraces(); }
-      const svcAll = t.services;
-      // order spans as a tree (depth-first by start)
-      const byParent = {}; for (const s of t.spans) (byParent[s.parentSpanId||""] ||= []).push(s);
+      const svcAll=t.services;
+      const byParent={}; for (const s of t.spans) (byParent[s.parentSpanId||""] ||= []).push(s);
       for (const k in byParent) byParent[k].sort((a,b)=>a.start-b.start);
-      const roots = t.spans.filter(s=>!s.parentSpanId||!t.spans.some(o=>o.spanId===s.parentSpanId));
+      const roots=t.spans.filter(s=>!s.parentSpanId||!t.spans.some(o=>o.spanId===s.parentSpanId));
       const ordered=[]; const walk=(s,d)=>{ ordered.push([s,d]);
         for (const c of (byParent[s.spanId]||[])) walk(c,d+1); };
       roots.sort((a,b)=>a.start-b.start).forEach(r=>walk(r,0));
-
-      const dur = Math.max(1,t.durationMs);
-      const wf = el("div",{class:"card"});
+      const dur=Math.max(1,t.durationMs);
+      const wf=el("div",{class:"card"});
       for (const [s,depth] of ordered) {
-        const off = ((s.start-t.start)/1e6)/dur*100;
-        const w = Math.max(0.5,(s.durationMs/dur)*100);
-        const color = s.error ? "var(--red)" : svcColor(s.service,svcAll);
-        const sel = state.selSpan===s.spanId;
-        wf.append(el("div",{class:"wf-row"+(sel?" sel":""),onclick:()=>{state.selSpan=s.spanId;render();}},
-          el("div",{class:"wf-name",style:`padding-left:${depth*14}px`,title:s.name},
-            (s.error?"⚠ ":"")+s.name),
+        const off=((s.start-t.start)/1e6)/dur*100, w=Math.max(0.5,(s.durationMs/dur)*100);
+        const color=s.error?"var(--err)":svcColor(s.service,svcAll);
+        wf.append(el("div",{class:"wf-row"+(state.selSpan===s.spanId?" sel":""),
+          onclick:()=>{state.selSpan=s.spanId;render();}},
+          el("div",{class:"wf-name",style:`padding-left:${depth*14}px`,title:s.name},(s.error?"⚠ ":"")+s.name),
           el("div",{class:"wf-track"},el("div",{class:"wf-bar",
             style:`left:${off}%;width:${w}%;background:${color}`})),
           el("div",{class:"wf-dur"},s.durationMs.toFixed(1)+"ms")));
       }
-      const legend = el("div",{class:"legend"}, ...svcAll.map(s=>el("span",{},
+      const legend=el("div",{class:"legend"}, ...svcAll.map(s=>el("span",{},
         el("span",{class:"sw",style:`background:${svcColor(s,svcAll)}`}),s)));
-
-      const detail = el("div",{class:"col"});
-      const sel = t.spans.find(s=>s.spanId===state.selSpan);
+      const detail=el("div",{class:"col"});
+      const sel=t.spans.find(s=>s.spanId===state.selSpan);
       if (!sel) detail.append(el("div",{class:"card muted"},"Select a span to see details."));
       else {
-        const kv = el("div",{class:"kv"});
-        const add=(k,v)=>{kv.append(el("div",{class:"k"},k),el("div",{class:"v"},String(v)));};
-        add("name",sel.name); add("service",sel.service);
-        add("duration",sel.durationMs.toFixed(3)+" ms");
-        add("status",sel.error?("ERROR "+sel.statusMsg):"OK");
-        add("spanId",sel.spanId); add("parentSpanId",sel.parentSpanId||"(root)");
+        const kv=el("div",{class:"kv"}); const add=(k,v)=>{kv.append(el("div",{class:"k"},k),el("div",{class:"v"},String(v)));};
+        add("name",sel.name); add("service",sel.service); add("duration",sel.durationMs.toFixed(3)+" ms");
+        add("status",sel.error?("ERROR "+sel.statusMsg):"OK"); add("spanId",sel.spanId);
+        add("parentSpanId",sel.parentSpanId||"(root)");
         for (const [k,v] of Object.entries(sel.attributes)) add(k,v);
-        const evs = el("div",{class:"section"},el("h2",{},"Events / logs"));
-        const logEvents = (sel.events||[]);
-        if (!logEvents.length) evs.append(el("div",{class:"muted"},"No events."));
-        for (const ev of logEvents) { const a=attrsToObj(ev.attributes);
+        const evs=el("div",{class:"section"},el("h2",{},"Events / logs"));
+        if (!(sel.events||[]).length) evs.append(el("div",{class:"muted"},"No events."));
+        for (const ev of sel.events||[]) { const a=attrsToObj(ev.attributes);
           evs.append(el("div",{class:"ev"},
-            el("span",{class:"badge "+sevClass((a["log.level"]||"").toUpperCase())},
-              a["log.level"]||ev.name),
+            el("span",{class:"badge "+sevClass((a["log.level"]||"").toUpperCase())},a["log.level"]||ev.name),
             el("span",{class:"mono",style:"margin-left:8px"},a["log.message"]||ev.name),
-            el("div",{class:"muted",style:"font-size:11px"},fmtTime(num(ev.timeUnixNano))))); }
+            el("div",{class:"faint",style:"font-size:11px"},fmtTime(num(ev.timeUnixNano))))); }
         detail.append(el("div",{class:"card"},el("h2",{},"Span detail"),kv,evs));
       }
-
       return el("div",{},
         el("div",{class:"section"},
           el("span",{class:"back",onclick:()=>{state.openTrace=null;state.selSpan=null;render();}},"← all traces"),
-          el("h2",{style:"margin-top:8px"},
-            `Trace ${tid.slice(0,16)}…  ·  ${t.count} spans  ·  ${t.durationMs.toFixed(1)} ms`)),
-        el("div",{class:"row"},
-          el("div",{class:"col"},wf,legend),
-          detail));
+          el("h2",{style:"margin-top:8px"},`Trace ${tid.slice(0,16)}…  ·  ${t.count} spans  ·  ${t.durationMs.toFixed(1)} ms`)),
+        el("div",{class:"row"}, el("div",{class:"col-2"},wf,legend), detail));
     }
 
     function viewLogs() {
-      const logs = allLogs();
-      const search = el("input",{class:"search",type:"text",placeholder:"Search logs…"});
-      const levelSel = el("select",{class:"search",style:"max-width:160px;margin-left:8px"},
+      const logs=allLogs();
+      const search=el("input",{class:"search",type:"text",placeholder:"Search logs…"});
+      const levelSel=el("select",{class:"search",style:"max-width:160px;margin-left:8px"},
         ...["ALL","DEBUG","INFO","WARNING","ERROR","CRITICAL"].map(l=>el("option",{value:l},l)));
-      const box = el("div",{class:"card"});
-      const draw=()=>{ box.innerHTML="";
-        const q=search.value.toLowerCase(), lv=levelSel.value;
-        const rows=logs.filter(l=>(lv==="ALL"||l.level===lv) &&
+      const box=el("div",{class:"card"});
+      const draw=()=>{ box.innerHTML=""; const q=search.value.toLowerCase(), lv=levelSel.value;
+        const rows=logs.filter(l=>(lv==="ALL"||l.level===lv)&&
           (!q||l.message.toLowerCase().includes(q)||l.logger.toLowerCase().includes(q)));
         if (!rows.length){box.append(el("div",{class:"empty"},
           logs.length?"No matching logs.":"No logs yet. Logs appear as span events in local mode."));return;}
@@ -382,58 +469,47 @@
         for (const l of rows.slice(0,300)) tb.append(el("tr",{class:"clickable",
           onclick:()=>{state.tab="traces";state.openTrace=l.traceId;state.selSpan=l.spanId;syncTabs();render();}},
           el("td",{},el("span",{class:"badge "+sevClass(l.level)},l.level)),
-          el("td",{class:"mono"},l.message),
-          el("td",{class:"muted"},l.logger),
-          el("td",{class:"mono muted"},(l.traceId||"").slice(0,12)+"…"),
-          el("td",{class:"muted"},fmtTime(l.time))));
-        t.append(tb); box.append(t);
-      };
+          el("td",{class:"mono"},l.message), el("td",{class:"muted"},l.logger),
+          el("td",{class:"mono muted"},(l.traceId||"").slice(0,12)+"…"), el("td",{class:"muted"},fmtTime(l.time))));
+        t.append(tb); box.append(t); };
       search.addEventListener("input",draw); levelSel.addEventListener("change",draw); draw();
-      return el("div",{class:"section"},
-        el("div",{style:"margin-bottom:12px"},search,levelSel),box);
+      return el("div",{class:"section"},el("div",{style:"margin-bottom:12px"},search,levelSel),box);
     }
 
     function viewSdk() {
-      const wrap = el("div",{class:"section"});
-      if (!state.sdk) { wrap.append(el("div",{class:"card empty"},"Loading SDK reference…")); return wrap; }
-      const decs = Object.values(state.sdk.decorators||{});
-      const fns = Object.values(state.sdk.functions||{});
+      const wrap=el("div",{class:"section"});
+      if (!state.sdk){ wrap.append(el("div",{class:"card empty"},"Loading SDK reference…")); return wrap; }
+      const decs=Object.values(state.sdk.decorators||{}), fns=Object.values(state.sdk.functions||{});
       wrap.append(el("h2",{},"Decorators"));
       if (!decs.length) wrap.append(el("div",{class:"muted"},"None."));
       for (const d of decs) wrap.append(el("div",{class:"card",style:"margin-bottom:10px"},
-        el("div",{class:"mono",style:"color:var(--blue)"},"@"+(d.name||"")),
+        el("div",{class:"mono",style:"color:var(--rose);font-weight:700"},"@"+(d.name||"")),
         el("div",{class:"muted",style:"white-space:pre-wrap;margin-top:6px"},(d.docstring||"").trim())));
       wrap.append(el("h2",{style:"margin-top:18px"},"Functions"));
       if (!fns.length) wrap.append(el("div",{class:"muted"},"None."));
       for (const f of fns) wrap.append(el("div",{class:"card",style:"margin-bottom:10px"},
-        el("div",{class:"mono",style:"color:var(--blue)"},(f.qualname||f.name||"")+(f.signature||"")),
+        el("div",{class:"mono",style:"color:#a3a3ff;font-weight:700"},(f.qualname||f.name||"")+(f.signature||"")),
         el("div",{class:"muted",style:"white-space:pre-wrap;margin-top:6px"},(f.docstring||"").trim())));
       return wrap;
     }
 
-    const VIEWS = { overview:viewOverview, traces:viewTraces, logs:viewLogs, sdk:viewSdk };
-    function render() {
-      const root=document.getElementById("root"); root.innerHTML="";
-      root.append((VIEWS[state.tab]||viewOverview)());
-    }
+    const VIEWS={ overview:viewOverview, traces:viewTraces, logs:viewLogs, sdk:viewSdk };
+    function render(){ const root=document.getElementById("root"); root.innerHTML="";
+      root.append((VIEWS[state.tab]||viewOverview)()); }
     function syncTabs(){ for (const b of document.querySelectorAll("nav.tabs button"))
       b.classList.toggle("active", b.dataset.tab===state.tab); }
 
-    async function fetchTelemetry() {
-      try { const r=await fetch(API+"/telemetry");
-        if (r.ok) state.telemetry=await r.json();
-        document.getElementById("live-text").textContent="Live monitoring";
-      } catch(e){ document.getElementById("live-text").textContent="Disconnected"; }
-      if (state.tab!=="sdk") render();
-    }
-    async function fetchSdk() {
-      try { const r=await fetch(API+"/sdk/schema"); if (r.ok) state.sdk=await r.json(); } catch(e){}
-      if (state.tab==="sdk") render();
-    }
+    async function fetchTelemetry(){ try { const r=await fetch(API+"/telemetry");
+      if (r.ok) state.telemetry=await r.json();
+      document.getElementById("live-text").textContent="Live monitoring";
+    } catch(e){ document.getElementById("live-text").textContent="Disconnected"; }
+      if (state.tab!=="sdk") render(); }
+    async function fetchSdk(){ try { const r=await fetch(API+"/sdk/schema"); if (r.ok) state.sdk=await r.json(); } catch(e){}
+      if (state.tab==="sdk") render(); }
 
     document.getElementById("tabs").addEventListener("click",(e)=>{
       const btn=e.target.closest("button[data-tab]"); if(!btn) return;
-      state.tab=btn.dataset.tab; if (state.tab!=="traces") {state.openTrace=null;state.selSpan=null;}
+      state.tab=btn.dataset.tab; if (state.tab!=="traces"){state.openTrace=null;state.selSpan=null;}
       syncTabs(); if (state.tab==="sdk"&&!state.sdk) fetchSdk(); render();
     });
     document.getElementById("refresh").addEventListener("click",fetchTelemetry);
