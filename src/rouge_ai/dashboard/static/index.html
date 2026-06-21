@@ -5,76 +5,92 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Rouge.AI Dashboard</title>
   <!--
-    Build-free dashboard: a single self-contained HTML file with inline CSS and
-    vanilla JS. No npm/Vite build, no CDN, no framework — it ships with the
-    Python package and renders by fetching the dashboard's own JSON API.
-    Data is fetched with RELATIVE paths ("api/...") so it works under any mount
-    prefix (e.g. "/rouge") without server-side templating.
+    Build-free dashboard: a single self-contained HTML file (inline CSS +
+    vanilla JS + hand-drawn SVG). No npm/Vite, no CDN, no framework. It renders
+    by fetching the dashboard's own JSON API with relative paths ("api/..."),
+    so it works under any mount prefix (e.g. "/rouge").
+
+    Views: Overview (metrics graphs), Traces (list -> waterfall -> span detail),
+    Logs (sourced from span events, since local-mode logs are span events),
+    SDK Docs (introspected SDK reference).
   -->
   <style>
     :root {
-      --bg: #0b1020; --panel: #131a2e; --panel-2: #1b2540;
-      --border: #243049; --text: #e6ebf5; --muted: #93a1bd;
-      --blue: #5b8cff; --green: #36d399; --red: #f87272; --amber: #fbbd23;
-      --purple: #a78bfa;
+      --bg:#0b1020; --panel:#131a2e; --panel-2:#1b2540; --panel-3:#0f1626;
+      --border:#243049; --text:#e6ebf5; --muted:#93a1bd;
+      --blue:#5b8cff; --green:#36d399; --red:#f87272; --amber:#fbbd23;
+      --purple:#a78bfa; --cyan:#22d3ee; --pink:#f472b6;
     }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0; background: var(--bg); color: var(--text);
-      font: 14px/1.5 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
-    a { color: var(--blue); }
-    .app { display: flex; flex-direction: column; min-height: 100vh; }
-    header {
-      display: flex; align-items: center; gap: 16px;
-      padding: 14px 24px; border-bottom: 1px solid var(--border);
-      background: var(--panel); position: sticky; top: 0; z-index: 5;
-    }
-    .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; }
-    .logo .mark {
-      width: 28px; height: 28px; border-radius: 8px; display: grid;
-      place-items: center; color: #fff; font-weight: 800;
-      background: linear-gradient(135deg, var(--red), var(--purple));
-    }
-    .live { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12px; }
-    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 0 rgba(54,211,153,.6); animation: pulse 2s infinite; }
-    @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(54,211,153,.5)} 70%{box-shadow:0 0 0 8px rgba(54,211,153,0)} 100%{box-shadow:0 0 0 0 rgba(54,211,153,0)} }
-    .spacer { flex: 1; }
-    button {
-      font: inherit; color: var(--text); background: var(--panel-2);
-      border: 1px solid var(--border); border-radius: 8px; padding: 7px 12px; cursor: pointer;
-    }
-    button:hover { border-color: var(--blue); }
-    nav.tabs { display: flex; gap: 4px; padding: 10px 24px 0; background: var(--panel); border-bottom: 1px solid var(--border); }
-    nav.tabs button {
-      background: transparent; border: none; border-bottom: 2px solid transparent;
-      border-radius: 0; color: var(--muted); padding: 8px 14px;
-    }
-    nav.tabs button.active { color: var(--text); border-bottom-color: var(--blue); }
-    main { padding: 24px; max-width: 1100px; width: 100%; margin: 0 auto; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 14px; }
-    .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
-    .stat .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
-    .stat .value { font-size: 28px; font-weight: 700; margin-top: 6px; }
-    .section { margin-top: 22px; }
-    .section h2 { font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin: 0 0 10px; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
-    th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; }
-    td.name { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-    .badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 600; }
-    .badge.ok { background: rgba(54,211,153,.15); color: var(--green); }
-    .badge.err { background: rgba(248,114,114,.15); color: var(--red); }
-    .badge.warn { background: rgba(251,189,35,.15); color: var(--amber); }
-    .badge.info { background: rgba(91,140,255,.15); color: var(--blue); }
-    .empty { color: var(--muted); padding: 28px; text-align: center; }
-    .search { width: 100%; max-width: 340px; padding: 8px 12px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); }
-    .sdk-item { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; background: var(--panel); }
-    .sdk-item .sig { font-family: ui-monospace, monospace; color: var(--blue); }
-    .sdk-item .doc { color: var(--muted); margin-top: 6px; white-space: pre-wrap; }
-    .muted { color: var(--muted); }
-    .spin { animation: spin 1s linear infinite; display: inline-block; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--text);
+      font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+    .app { display:flex; flex-direction:column; min-height:100vh; }
+    header { display:flex; align-items:center; gap:16px; padding:14px 24px;
+      border-bottom:1px solid var(--border); background:var(--panel);
+      position:sticky; top:0; z-index:5; }
+    .logo { display:flex; align-items:center; gap:10px; font-weight:700; }
+    .logo .mark { width:28px; height:28px; border-radius:8px; display:grid;
+      place-items:center; color:#fff; font-weight:800;
+      background:linear-gradient(135deg,var(--red),var(--purple)); }
+    .live { display:flex; align-items:center; gap:7px; color:var(--muted); font-size:12px; }
+    .dot { width:8px; height:8px; border-radius:50%; background:var(--green);
+      animation:pulse 2s infinite; }
+    @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(54,211,153,.5)}
+      70%{box-shadow:0 0 0 8px rgba(54,211,153,0)} 100%{box-shadow:0 0 0 0 rgba(54,211,153,0)} }
+    .spacer { flex:1; }
+    button { font:inherit; color:var(--text); background:var(--panel-2);
+      border:1px solid var(--border); border-radius:8px; padding:7px 12px; cursor:pointer; }
+    button:hover { border-color:var(--blue); }
+    nav.tabs { display:flex; gap:4px; padding:10px 24px 0; background:var(--panel);
+      border-bottom:1px solid var(--border); }
+    nav.tabs button { background:transparent; border:none; border-bottom:2px solid transparent;
+      border-radius:0; color:var(--muted); padding:8px 14px; }
+    nav.tabs button.active { color:var(--text); border-bottom-color:var(--blue); }
+    main { padding:24px; max-width:1180px; width:100%; margin:0 auto; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; }
+    .card { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px; }
+    .stat .label { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.04em; }
+    .stat .value { font-size:26px; font-weight:700; margin-top:6px; }
+    .section { margin-top:22px; }
+    .section h2 { font-size:13px; color:var(--muted); text-transform:uppercase;
+      letter-spacing:.05em; margin:0 0 10px; }
+    table { width:100%; border-collapse:collapse; }
+    th,td { text-align:left; padding:9px 12px; border-bottom:1px solid var(--border); vertical-align:top; }
+    th { color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; }
+    tr.clickable { cursor:pointer; }
+    tr.clickable:hover td { background:var(--panel-2); }
+    td.mono,.mono { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
+    .badge { font-size:11px; padding:2px 8px; border-radius:999px; font-weight:600; white-space:nowrap; }
+    .badge.ok { background:rgba(54,211,153,.15); color:var(--green); }
+    .badge.err { background:rgba(248,114,114,.15); color:var(--red); }
+    .badge.warn { background:rgba(251,189,35,.15); color:var(--amber); }
+    .badge.info { background:rgba(91,140,255,.15); color:var(--blue); }
+    .badge.svc { background:rgba(167,139,250,.15); color:var(--purple); }
+    .empty { color:var(--muted); padding:28px; text-align:center; }
+    .muted { color:var(--muted); }
+    .search { width:100%; max-width:340px; padding:8px 12px; background:var(--panel-2);
+      border:1px solid var(--border); border-radius:8px; color:var(--text); }
+    .row { display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap; }
+    .col { flex:1; min-width:280px; }
+    .back { color:var(--blue); cursor:pointer; font-size:13px; }
+    /* waterfall */
+    .wf-row { display:grid; grid-template-columns:340px 1fr 70px; gap:8px;
+      align-items:center; padding:3px 0; cursor:pointer; border-radius:6px; }
+    .wf-row:hover { background:var(--panel-2); }
+    .wf-row.sel { background:var(--panel-2); outline:1px solid var(--blue); }
+    .wf-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; }
+    .wf-track { position:relative; height:16px; background:var(--panel-3);
+      border-radius:4px; overflow:hidden; }
+    .wf-bar { position:absolute; top:0; height:16px; border-radius:4px; min-width:2px; }
+    .wf-dur { text-align:right; font-size:12px; color:var(--muted); font-family:ui-monospace,monospace; }
+    .kv { display:grid; grid-template-columns:minmax(120px,240px) 1fr; gap:2px 14px; }
+    .kv .k { color:var(--muted); font-size:12px; font-family:ui-monospace,monospace; word-break:break-all; }
+    .kv .v { font-size:13px; word-break:break-word; font-family:ui-monospace,monospace; }
+    .legend { display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--muted); margin-top:8px; }
+    .legend .sw { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; }
+    .bars { display:flex; align-items:flex-end; gap:3px; height:120px; }
+    .bars .b { flex:1; background:var(--blue); border-radius:3px 3px 0 0; min-height:2px; }
+    .ev { border-left:2px solid var(--border); padding:4px 0 4px 10px; margin:6px 0; }
   </style>
 </head>
 <body>
@@ -85,49 +101,67 @@
       <span class="spacer"></span>
       <button id="refresh">↻ Refresh</button>
     </header>
-
     <nav class="tabs" id="tabs">
       <button data-tab="overview" class="active">Overview</button>
       <button data-tab="traces">Traces</button>
       <button data-tab="logs">Logs</button>
       <button data-tab="sdk">SDK Docs</button>
     </nav>
-
-    <!-- root mount point -->
     <main id="root"><div class="empty">Loading…</div></main>
   </div>
 
   <script>
     "use strict";
-    const API = "api"; // relative => resolves under the dashboard mount prefix
-    const state = { tab: "overview", telemetry: { traces: [], logs: [], metrics: [] }, sdk: null };
+    const API = "api";
+    const SVC_COLORS = ["#5b8cff","#a78bfa","#36d399","#22d3ee","#f472b6","#fbbd23","#f87272"];
+    const state = { tab:"overview", telemetry:{traces:[],logs:[],metrics:[]},
+                    sdk:null, openTrace:null, selSpan:null };
 
-    const el = (tag, attrs = {}, ...kids) => {
+    const el = (tag, attrs={}, ...kids) => {
       const n = document.createElement(tag);
-      for (const [k, v] of Object.entries(attrs)) {
-        if (k === "class") n.className = v;
-        else if (k === "html") n.innerHTML = v;
-        else n.setAttribute(k, v);
+      for (const [k,v] of Object.entries(attrs)) {
+        if (k==="class") n.className=v; else if (k==="html") n.innerHTML=v;
+        else if (k.startsWith("on") && typeof v==="function") n.addEventListener(k.slice(2),v);
+        else if (v!==null && v!==undefined) n.setAttribute(k,v);
       }
-      for (const kid of kids) n.append(kid?.nodeType ? kid : document.createTextNode(kid ?? ""));
+      for (const kid of kids) if (kid!==null && kid!==undefined)
+        n.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
       return n;
     };
-    const esc = (s) => String(s ?? "");
 
-    // --- OTLP JSON parsing helpers -------------------------------------------
-    function flattenSpans(traces) {
+    // --- OTLP parsing --------------------------------------------------------
+    const num = (x) => Number(x||0);
+    function attrVal(v) {
+      if (v==null) return "";
+      if ("stringValue" in v) return v.stringValue;
+      if ("intValue" in v) return v.intValue;
+      if ("doubleValue" in v) return v.doubleValue;
+      if ("boolValue" in v) return v.boolValue;
+      if ("arrayValue" in v) return (v.arrayValue.values||[]).map(attrVal).join(", ");
+      return JSON.stringify(v);
+    }
+    function attrsToObj(list) {
+      const o = {};
+      for (const a of list||[]) o[a.key] = attrVal(a.value);
+      return o;
+    }
+    // Flatten every span across all trace payloads into a rich record.
+    function allSpans() {
       const out = [];
-      for (const payload of traces || []) {
-        for (const rs of payload.resourceSpans || []) {
-          for (const ss of rs.scopeSpans || rs.instrumentationLibrarySpans || []) {
-            for (const sp of ss.spans || []) {
-              const start = Number(sp.startTimeUnixNano || 0);
-              const end = Number(sp.endTimeUnixNano || 0);
+      for (const payload of state.telemetry.traces||[]) {
+        for (const rs of payload.resourceSpans||[]) {
+          const res = attrsToObj((rs.resource||{}).attributes);
+          const svc = res["service.name"] || "unknown";
+          for (const ss of rs.scopeSpans||rs.instrumentationLibrarySpans||[]) {
+            for (const sp of ss.spans||[]) {
+              const start = num(sp.startTimeUnixNano), end = num(sp.endTimeUnixNano);
               out.push({
-                name: sp.name || "unnamed-span",
-                durationMs: end > start ? (end - start) / 1e6 : null,
-                start,
-                status: sp.status && sp.status.code === 2 ? "err" : "ok",
+                traceId: sp.traceId, spanId: sp.spanId, parentSpanId: sp.parentSpanId||"",
+                name: sp.name||"span", service: svc, start, end,
+                durationMs: end>start ? (end-start)/1e6 : 0,
+                error: (sp.status&&sp.status.code===2)||false,
+                attributes: attrsToObj(sp.attributes), events: sp.events||[],
+                statusMsg: (sp.status&&sp.status.message)||"",
               });
             }
           }
@@ -135,161 +169,275 @@
       }
       return out;
     }
-    function flattenLogs(logs) {
-      const out = [];
-      for (const payload of logs || []) {
-        for (const rl of payload.resourceLogs || []) {
-          for (const sl of rl.scopeLogs || rl.instrumentationLibraryLogs || []) {
-            for (const lr of sl.logRecords || []) {
-              const sev = (lr.severityText || "INFO").toUpperCase();
-              const body = lr.body ? (lr.body.stringValue ?? JSON.stringify(lr.body)) : "";
-              out.push({ severity: sev, body, time: Number(lr.timeUnixNano || 0) });
-            }
-          }
+    // Group spans into traces (newest first).
+    function traceList() {
+      const spans = allSpans();
+      const byTrace = {};
+      for (const s of spans) (byTrace[s.traceId] ||= []).push(s);
+      const traces = Object.entries(byTrace).map(([tid, sps]) => {
+        const start = Math.min(...sps.map(s=>s.start));
+        const end = Math.max(...sps.map(s=>s.end));
+        const root = sps.find(s=>!s.parentSpanId || !sps.some(o=>o.spanId===s.parentSpanId)) || sps[0];
+        return { traceId:tid, spans:sps, start, end,
+          durationMs: end>start ? (end-start)/1e6 : 0,
+          root, services:[...new Set(sps.map(s=>s.service))],
+          error: sps.some(s=>s.error), count: sps.length };
+      });
+      traces.sort((a,b)=>b.start-a.start);
+      return traces;
+    }
+    const svcColor = (svc, all) => SVC_COLORS[(all.indexOf(svc)+SVC_COLORS.length)%SVC_COLORS.length];
+    // All log.* span events as flat log records.
+    function allLogs() {
+      const logs = [];
+      for (const s of allSpans()) {
+        for (const ev of s.events||[]) {
+          if (!(ev.name||"").startsWith("log")) continue;
+          const a = attrsToObj(ev.attributes);
+          logs.push({
+            level:(a["log.level"]||ev.name.replace("log.","")||"INFO").toUpperCase(),
+            message:a["log.message"]||"", logger:a["log.logger"]||"",
+            time:num(ev.timeUnixNano), traceId:s.traceId, spanId:s.spanId });
         }
       }
-      return out;
+      logs.sort((a,b)=>b.time-a.time);
+      return logs;
     }
-    const fmtTime = (nano) => nano ? new Date(nano / 1e6).toLocaleTimeString() : "—";
-    const sevClass = (s) => s === "ERROR" || s === "FATAL" ? "err" : s === "WARN" || s === "WARNING" ? "warn" : "info";
-
-    // --- Views ---------------------------------------------------------------
-    function viewOverview() {
-      const spans = flattenSpans(state.telemetry.traces);
-      const logs = flattenLogs(state.telemetry.logs);
-      const errors = logs.filter((l) => sevClass(l.severity) === "err").length;
-      const metrics = (state.telemetry.metrics || []).length;
-
-      const stat = (label, value, color) =>
-        el("div", { class: "card stat" }, el("div", { class: "label" }, label),
-          el("div", { class: "value", style: color ? `color:${color}` : "" }, String(value)));
-
-      const grid = el("div", { class: "grid" },
-        stat("Spans", spans.length, "var(--blue)"),
-        stat("Logs", logs.length, "var(--green)"),
-        stat("Errors", errors, "var(--red)"),
-        stat("Metric batches", metrics, "var(--purple)"));
-
-      const recent = el("div", { class: "section" }, el("h2", {}, "Recent spans"));
-      if (spans.length === 0) {
-        recent.append(el("div", { class: "card empty" }, "No traces received yet. Point your OTLP exporter here, or call connect_fastapi()."));
-      } else {
-        const table = el("table", {}, el("thead", {}, el("tr", {},
-          el("th", {}, "Span"), el("th", {}, "Duration"), el("th", {}, "Status"))));
-        const tb = el("tbody");
-        for (const s of spans.slice(0, 8)) {
-          tb.append(el("tr", {},
-            el("td", { class: "name" }, s.name),
-            el("td", {}, s.durationMs == null ? "—" : s.durationMs.toFixed(2) + " ms"),
-            el("td", {}, el("span", { class: "badge " + (s.status === "err" ? "err" : "ok") }, s.status === "err" ? "Error" : "OK"))));
-        }
-        table.append(tb);
-        recent.append(el("div", { class: "card" }, table));
-      }
-      return el("div", {}, grid, recent);
+    const fmtTime = (nano)=> nano ? new Date(nano/1e6).toLocaleTimeString() : "—";
+    const sevClass = (s)=> (s==="ERROR"||s==="FATAL"||s==="CRITICAL")?"err"
+      :(s==="WARN"||s==="WARNING")?"warn":(s==="DEBUG")?"svc":"info";
+    function pct(arr, p) {
+      if (!arr.length) return 0;
+      const s=[...arr].sort((a,b)=>a-b);
+      return s[Math.min(s.length-1, Math.floor(p/100*s.length))];
     }
 
-    function listView(rows, columns, placeholder) {
-      const search = el("input", { class: "search", type: "text", placeholder: "Search…" });
-      const tableWrap = el("div", { class: "card" });
-      const render = (filter) => {
-        tableWrap.innerHTML = "";
-        const filtered = filter
-          ? rows.filter((r) => columns.some((c) => esc(c.get(r)).toLowerCase().includes(filter.toLowerCase())))
-          : rows;
-        if (filtered.length === 0) { tableWrap.append(el("div", { class: "empty" }, placeholder)); return; }
-        const table = el("table", {}, el("thead", {}, el("tr", {}, ...columns.map((c) => el("th", {}, c.label)))));
-        const tb = el("tbody");
-        for (const r of filtered) tb.append(el("tr", {}, ...columns.map((c) => c.cell(r))));
-        table.append(tb); tableWrap.append(table);
-      };
-      search.addEventListener("input", (e) => render(e.target.value));
-      render("");
-      return el("div", { class: "section" }, el("div", { style: "margin-bottom:12px" }, search), tableWrap);
-    }
-
-    function viewTraces() {
-      const spans = flattenSpans(state.telemetry.traces);
-      return listView(spans, [
-        { label: "Span", get: (s) => s.name, cell: (s) => el("td", { class: "name" }, s.name) },
-        { label: "Duration", get: (s) => s.durationMs, cell: (s) => el("td", {}, s.durationMs == null ? "—" : s.durationMs.toFixed(2) + " ms") },
-        { label: "Status", get: (s) => s.status, cell: (s) => el("td", {}, el("span", { class: "badge " + (s.status === "err" ? "err" : "ok") }, s.status === "err" ? "Error" : "OK")) },
-      ], "No traces found.");
-    }
-
-    function viewLogs() {
-      const logs = flattenLogs(state.telemetry.logs);
-      return listView(logs, [
-        { label: "Severity", get: (l) => l.severity, cell: (l) => el("td", {}, el("span", { class: "badge " + sevClass(l.severity) }, l.severity)) },
-        { label: "Message", get: (l) => l.body, cell: (l) => el("td", { class: "name" }, l.body) },
-        { label: "Time", get: (l) => l.time, cell: (l) => el("td", { class: "muted" }, fmtTime(l.time)) },
-      ], "No logs found.");
-    }
-
-    function viewSdk() {
-      const wrap = el("div", { class: "section" });
-      if (!state.sdk) { wrap.append(el("div", { class: "card empty" }, "Loading SDK reference…")); return wrap; }
-      const { decorators, functions } = state.sdk;
-      wrap.append(el("h2", {}, "Decorators"));
-      const decs = Object.values(decorators || {});
-      if (!decs.length) wrap.append(el("div", { class: "muted" }, "None registered."));
-      for (const d of decs) {
-        wrap.append(el("div", { class: "sdk-item" },
-          el("div", { class: "sig" }, "@" + (d.name || "")),
-          el("div", { class: "doc" }, (d.docstring || "").trim())));
-      }
-      wrap.append(el("h2", { style: "margin-top:20px" }, "Functions"));
-      const fns = Object.values(functions || {});
-      if (!fns.length) wrap.append(el("div", { class: "muted" }, "None registered."));
-      for (const f of fns) {
-        wrap.append(el("div", { class: "sdk-item" },
-          el("div", { class: "sig" }, (f.qualname || f.name || "") + (f.signature || "")),
-          el("div", { class: "doc" }, (f.docstring || "").trim())));
-      }
+    // --- SVG charts (no deps) ------------------------------------------------
+    function barChart(values, color) {
+      const max = Math.max(1, ...values);
+      const wrap = el("div",{class:"bars"});
+      (values.length?values:[0]).forEach(v=>{
+        wrap.append(el("div",{class:"b",
+          style:`height:${Math.round(v/max*100)}%;background:${color||"var(--blue)"}`,
+          title:String(v)}));
+      });
       return wrap;
     }
 
-    const VIEWS = { overview: viewOverview, traces: viewTraces, logs: viewLogs, sdk: viewSdk };
+    // --- Views ---------------------------------------------------------------
+    function viewOverview() {
+      const spans = allSpans();
+      const traces = traceList();
+      const logs = allLogs();
+      const durations = traces.map(t=>t.durationMs);
+      const errors = spans.filter(s=>s.error).length;
+      // token usage from gen_ai/llm attributes
+      let tokens = 0;
+      for (const s of spans) for (const [k,v] of Object.entries(s.attributes))
+        if (/token/i.test(k) && /total|usage/i.test(k)) tokens += num(v);
+      // throughput buckets: spans per ~2s over last 20 buckets
+      const now = Math.max(0,...spans.map(s=>s.end));
+      const buckets = new Array(20).fill(0);
+      const span = 2e9; // 2s in ns
+      for (const s of spans) { const idx = 19-Math.floor((now-s.end)/span);
+        if (idx>=0 && idx<20) buckets[idx]++; }
 
-    function render() {
-      const root = document.getElementById("root");
-      root.innerHTML = "";
-      root.append((VIEWS[state.tab] || viewOverview)());
+      const stat=(l,v,c)=>el("div",{class:"card stat"},el("div",{class:"label"},l),
+        el("div",{class:"value",style:c?`color:${c}`:""},String(v)));
+
+      const wrap = el("div",{},
+        el("div",{class:"grid"},
+          stat("Traces",traces.length,"var(--blue)"),
+          stat("Spans",spans.length,"var(--cyan)"),
+          stat("Errors",errors,"var(--red)"),
+          stat("Logs",logs.length,"var(--green)"),
+          stat("LLM tokens",tokens||"—","var(--purple)")),
+        el("div",{class:"row section"},
+          el("div",{class:"col card"},el("h2",{},"Throughput (spans / 2s)"),
+            barChart(buckets,"var(--blue)")),
+          el("div",{class:"col card"},el("h2",{},"Latency (trace ms)"),
+            el("div",{class:"grid"},
+              stat("p50",durations.length?pct(durations,50).toFixed(1):"—"),
+              stat("p95",durations.length?pct(durations,95).toFixed(1):"—"),
+              stat("p99",durations.length?pct(durations,99).toFixed(1):"—")),
+            el("div",{class:"muted",style:"margin-top:8px;font-size:12px"},
+              `error rate: ${spans.length?(errors/spans.length*100).toFixed(1):0}%`))));
+
+      // spans by service
+      const bySvc = {}; for (const s of spans) bySvc[s.service]=(bySvc[s.service]||0)+1;
+      const svcAll = Object.keys(bySvc);
+      const svcSec = el("div",{class:"section"},el("h2",{},"Spans by service"));
+      if (!svcAll.length) svcSec.append(el("div",{class:"card empty"},"No spans yet."));
+      else { const c=el("div",{class:"card"});
+        for (const [svc,n] of Object.entries(bySvc))
+          c.append(el("div",{style:"display:flex;justify-content:space-between;padding:4px 0"},
+            el("span",{},el("span",{class:"badge svc",
+              style:`background:${svcColor(svc,svcAll)}22;color:${svcColor(svc,svcAll)}`},svc)),
+            el("span",{class:"mono"},String(n))));
+        svcSec.append(c); }
+      wrap.append(svcSec);
+      return wrap;
     }
+
+    function viewTraces() {
+      if (state.openTrace) return viewTraceDetail(state.openTrace);
+      const traces = traceList();
+      const sec = el("div",{class:"section"});
+      if (!traces.length) return el("div",{class:"card empty"},
+        "No traces yet. Generate traffic, or call connect_fastapi().");
+      const table = el("table",{},el("thead",{},el("tr",{},
+        el("th",{},"Root span"),el("th",{},"Services"),el("th",{},"Spans"),
+        el("th",{},"Duration"),el("th",{},"Status"))));
+      const tb = el("tbody"); const svcAll=[...new Set(traces.flatMap(t=>t.services))];
+      for (const t of traces.slice(0,100)) {
+        tb.append(el("tr",{class:"clickable",onclick:()=>{state.openTrace=t.traceId;state.selSpan=null;render();}},
+          el("td",{class:"mono"},t.root.name),
+          el("td",{}, ...t.services.map(s=>el("span",{class:"badge svc",
+            style:`background:${svcColor(s,svcAll)}22;color:${svcColor(s,svcAll)};margin-right:4px`},s))),
+          el("td",{class:"mono"},String(t.count)),
+          el("td",{class:"mono"},t.durationMs.toFixed(1)+" ms"),
+          el("td",{},el("span",{class:"badge "+(t.error?"err":"ok")},t.error?"Error":"OK"))));
+      }
+      table.append(tb); sec.append(el("div",{class:"card"},table));
+      return sec;
+    }
+
+    function viewTraceDetail(tid) {
+      const t = traceList().find(x=>x.traceId===tid);
+      if (!t) { state.openTrace=null; return viewTraces(); }
+      const svcAll = t.services;
+      // order spans as a tree (depth-first by start)
+      const byParent = {}; for (const s of t.spans) (byParent[s.parentSpanId||""] ||= []).push(s);
+      for (const k in byParent) byParent[k].sort((a,b)=>a.start-b.start);
+      const roots = t.spans.filter(s=>!s.parentSpanId||!t.spans.some(o=>o.spanId===s.parentSpanId));
+      const ordered=[]; const walk=(s,d)=>{ ordered.push([s,d]);
+        for (const c of (byParent[s.spanId]||[])) walk(c,d+1); };
+      roots.sort((a,b)=>a.start-b.start).forEach(r=>walk(r,0));
+
+      const dur = Math.max(1,t.durationMs);
+      const wf = el("div",{class:"card"});
+      for (const [s,depth] of ordered) {
+        const off = ((s.start-t.start)/1e6)/dur*100;
+        const w = Math.max(0.5,(s.durationMs/dur)*100);
+        const color = s.error ? "var(--red)" : svcColor(s.service,svcAll);
+        const sel = state.selSpan===s.spanId;
+        wf.append(el("div",{class:"wf-row"+(sel?" sel":""),onclick:()=>{state.selSpan=s.spanId;render();}},
+          el("div",{class:"wf-name",style:`padding-left:${depth*14}px`,title:s.name},
+            (s.error?"⚠ ":"")+s.name),
+          el("div",{class:"wf-track"},el("div",{class:"wf-bar",
+            style:`left:${off}%;width:${w}%;background:${color}`})),
+          el("div",{class:"wf-dur"},s.durationMs.toFixed(1)+"ms")));
+      }
+      const legend = el("div",{class:"legend"}, ...svcAll.map(s=>el("span",{},
+        el("span",{class:"sw",style:`background:${svcColor(s,svcAll)}`}),s)));
+
+      const detail = el("div",{class:"col"});
+      const sel = t.spans.find(s=>s.spanId===state.selSpan);
+      if (!sel) detail.append(el("div",{class:"card muted"},"Select a span to see details."));
+      else {
+        const kv = el("div",{class:"kv"});
+        const add=(k,v)=>{kv.append(el("div",{class:"k"},k),el("div",{class:"v"},String(v)));};
+        add("name",sel.name); add("service",sel.service);
+        add("duration",sel.durationMs.toFixed(3)+" ms");
+        add("status",sel.error?("ERROR "+sel.statusMsg):"OK");
+        add("spanId",sel.spanId); add("parentSpanId",sel.parentSpanId||"(root)");
+        for (const [k,v] of Object.entries(sel.attributes)) add(k,v);
+        const evs = el("div",{class:"section"},el("h2",{},"Events / logs"));
+        const logEvents = (sel.events||[]);
+        if (!logEvents.length) evs.append(el("div",{class:"muted"},"No events."));
+        for (const ev of logEvents) { const a=attrsToObj(ev.attributes);
+          evs.append(el("div",{class:"ev"},
+            el("span",{class:"badge "+sevClass((a["log.level"]||"").toUpperCase())},
+              a["log.level"]||ev.name),
+            el("span",{class:"mono",style:"margin-left:8px"},a["log.message"]||ev.name),
+            el("div",{class:"muted",style:"font-size:11px"},fmtTime(num(ev.timeUnixNano))))); }
+        detail.append(el("div",{class:"card"},el("h2",{},"Span detail"),kv,evs));
+      }
+
+      return el("div",{},
+        el("div",{class:"section"},
+          el("span",{class:"back",onclick:()=>{state.openTrace=null;state.selSpan=null;render();}},"← all traces"),
+          el("h2",{style:"margin-top:8px"},
+            `Trace ${tid.slice(0,16)}…  ·  ${t.count} spans  ·  ${t.durationMs.toFixed(1)} ms`)),
+        el("div",{class:"row"},
+          el("div",{class:"col"},wf,legend),
+          detail));
+    }
+
+    function viewLogs() {
+      const logs = allLogs();
+      const search = el("input",{class:"search",type:"text",placeholder:"Search logs…"});
+      const levelSel = el("select",{class:"search",style:"max-width:160px;margin-left:8px"},
+        ...["ALL","DEBUG","INFO","WARNING","ERROR","CRITICAL"].map(l=>el("option",{value:l},l)));
+      const box = el("div",{class:"card"});
+      const draw=()=>{ box.innerHTML="";
+        const q=search.value.toLowerCase(), lv=levelSel.value;
+        const rows=logs.filter(l=>(lv==="ALL"||l.level===lv) &&
+          (!q||l.message.toLowerCase().includes(q)||l.logger.toLowerCase().includes(q)));
+        if (!rows.length){box.append(el("div",{class:"empty"},
+          logs.length?"No matching logs.":"No logs yet. Logs appear as span events in local mode."));return;}
+        const t=el("table",{},el("thead",{},el("tr",{},el("th",{},"Level"),el("th",{},"Message"),
+          el("th",{},"Logger"),el("th",{},"Trace"),el("th",{},"Time"))));
+        const tb=el("tbody");
+        for (const l of rows.slice(0,300)) tb.append(el("tr",{class:"clickable",
+          onclick:()=>{state.tab="traces";state.openTrace=l.traceId;state.selSpan=l.spanId;syncTabs();render();}},
+          el("td",{},el("span",{class:"badge "+sevClass(l.level)},l.level)),
+          el("td",{class:"mono"},l.message),
+          el("td",{class:"muted"},l.logger),
+          el("td",{class:"mono muted"},(l.traceId||"").slice(0,12)+"…"),
+          el("td",{class:"muted"},fmtTime(l.time))));
+        t.append(tb); box.append(t);
+      };
+      search.addEventListener("input",draw); levelSel.addEventListener("change",draw); draw();
+      return el("div",{class:"section"},
+        el("div",{style:"margin-bottom:12px"},search,levelSel),box);
+    }
+
+    function viewSdk() {
+      const wrap = el("div",{class:"section"});
+      if (!state.sdk) { wrap.append(el("div",{class:"card empty"},"Loading SDK reference…")); return wrap; }
+      const decs = Object.values(state.sdk.decorators||{});
+      const fns = Object.values(state.sdk.functions||{});
+      wrap.append(el("h2",{},"Decorators"));
+      if (!decs.length) wrap.append(el("div",{class:"muted"},"None."));
+      for (const d of decs) wrap.append(el("div",{class:"card",style:"margin-bottom:10px"},
+        el("div",{class:"mono",style:"color:var(--blue)"},"@"+(d.name||"")),
+        el("div",{class:"muted",style:"white-space:pre-wrap;margin-top:6px"},(d.docstring||"").trim())));
+      wrap.append(el("h2",{style:"margin-top:18px"},"Functions"));
+      if (!fns.length) wrap.append(el("div",{class:"muted"},"None."));
+      for (const f of fns) wrap.append(el("div",{class:"card",style:"margin-bottom:10px"},
+        el("div",{class:"mono",style:"color:var(--blue)"},(f.qualname||f.name||"")+(f.signature||"")),
+        el("div",{class:"muted",style:"white-space:pre-wrap;margin-top:6px"},(f.docstring||"").trim())));
+      return wrap;
+    }
+
+    const VIEWS = { overview:viewOverview, traces:viewTraces, logs:viewLogs, sdk:viewSdk };
+    function render() {
+      const root=document.getElementById("root"); root.innerHTML="";
+      root.append((VIEWS[state.tab]||viewOverview)());
+    }
+    function syncTabs(){ for (const b of document.querySelectorAll("nav.tabs button"))
+      b.classList.toggle("active", b.dataset.tab===state.tab); }
 
     async function fetchTelemetry() {
-      try {
-        const res = await fetch(API + "/telemetry");
-        if (res.ok) state.telemetry = await res.json();
-        document.getElementById("live-text").textContent = "Live monitoring";
-      } catch (e) {
-        document.getElementById("live-text").textContent = "Disconnected";
-      }
-      if (state.tab !== "sdk") render();
+      try { const r=await fetch(API+"/telemetry");
+        if (r.ok) state.telemetry=await r.json();
+        document.getElementById("live-text").textContent="Live monitoring";
+      } catch(e){ document.getElementById("live-text").textContent="Disconnected"; }
+      if (state.tab!=="sdk") render();
     }
-
     async function fetchSdk() {
-      try {
-        const res = await fetch(API + "/sdk/schema");
-        if (res.ok) state.sdk = await res.json();
-      } catch (e) { /* SDK docs are optional */ }
-      if (state.tab === "sdk") render();
+      try { const r=await fetch(API+"/sdk/schema"); if (r.ok) state.sdk=await r.json(); } catch(e){}
+      if (state.tab==="sdk") render();
     }
 
-    // --- Wiring --------------------------------------------------------------
-    document.getElementById("tabs").addEventListener("click", (e) => {
-      const btn = e.target.closest("button[data-tab]");
-      if (!btn) return;
-      state.tab = btn.dataset.tab;
-      for (const b of document.querySelectorAll("nav.tabs button")) b.classList.toggle("active", b === btn);
-      if (state.tab === "sdk" && !state.sdk) fetchSdk();
-      render();
+    document.getElementById("tabs").addEventListener("click",(e)=>{
+      const btn=e.target.closest("button[data-tab]"); if(!btn) return;
+      state.tab=btn.dataset.tab; if (state.tab!=="traces") {state.openTrace=null;state.selSpan=null;}
+      syncTabs(); if (state.tab==="sdk"&&!state.sdk) fetchSdk(); render();
     });
-    document.getElementById("refresh").addEventListener("click", fetchTelemetry);
-
-    fetchTelemetry();
-    fetchSdk();
-    setInterval(fetchTelemetry, 5000);
+    document.getElementById("refresh").addEventListener("click",fetchTelemetry);
+    fetchTelemetry(); fetchSdk(); setInterval(fetchTelemetry,5000);
   </script>
 </body>
 </html>
