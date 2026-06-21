@@ -61,6 +61,14 @@ class TestLLMInstrumentationConfig(unittest.TestCase):
         self.assertEqual(mock_import.call_count, 0)
 
     @patch("builtins.__import__")
+    def test_haystack_is_wired(self, mock_import):
+        """Haystack (shipped in the [llm] extra) is now instrumented."""
+        mock_import.side_effect = ImportError
+        instrument_llm(self.config)
+        calls = [call[0][0] for call in mock_import.call_args_list]
+        self.assertIn("opentelemetry.instrumentation.haystack", calls)
+
+    @patch("builtins.__import__")
     def test_block_list_excludes_provider(self, mock_import):
         """A blocked provider is skipped even under allow-all (default)."""
         mock_import.side_effect = ImportError
