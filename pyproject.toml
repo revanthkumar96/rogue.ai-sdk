@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rouge-ai"
-version = "0.0.10"
+version = "0.0.11"
 description = "The SDK that revolutionizes debugging and tracing."
 readme = "README.md"
 requires-python = ">=3.10"
