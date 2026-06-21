@@ -141,6 +141,11 @@ class TestDashboardMount(unittest.TestCase):
         # ... and crucially NOT a hashed React/Vite bundle or a CDN script.
         self.assertNotIn("assets/index-", body)
         self.assertNotIn("cdn.jsdelivr", body)
+        # trace explorer + logs + metrics components are present
+        self.assertIn("viewTraceDetail", body)  # waterfall + span detail
+        self.assertIn("wf-row", body)  # waterfall rows
+        self.assertIn("allLogs", body)  # logs from span events
+        self.assertIn("barChart", body)  # metrics graph
 
     def test_old_react_bundle_is_not_served(self):
         """C3: the previously-shipped Vite bundle must be gone (404)."""
