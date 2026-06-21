@@ -192,18 +192,18 @@ ______________________________________________________________________
 
 ## 5. Known gaps to close (current → target)
 
-| #             | Gap (current)                | Target                                           | Likely change                                                                               |
-| ------------- | ---------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------- |
-| G-LOG         | Logs tab empty in local mode | Logs view shows span-event logs                  | frontend: extract `log.*` events from traces; (optional) add an OTLP-logs-to-dashboard path |
-| G-WF          | No waterfall/flamegraph      | Full span-tree waterfall                         | frontend: build tree from spans (traceId/spanId/parentSpanId) + time bars                   |
-| G-GRAPH       | No metrics graphs            | Throughput/latency/error/token graphs            | frontend: aggregate store; SVG/canvas charts (no build)                                     |
-| G-DETAIL      | No span drill-down           | Attributes + events + status panel               | frontend: span detail view                                                                  |
-| G-MULTI       | Single service, trivial work | Gateway + agent services, propagated trace       | demo: split services, HTTP call, shared trace                                               |
-| G-LLM         | No real LLM spans            | Gemini via LangGraph multi-agent                 | demo: wire `multiagent.py` into the flow w/ `GEMINI_API_KEY`                                |
-| G-ERR         | No error/exception traces    | ERROR span demo                                  | demo: failing endpoint                                                                      |
-| G-PII         | Redaction not demonstrated   | PII endpoint shows redaction                     | demo: endpoint with fake PII                                                                |
-| G-SAMP        | Sampling not shown           | Sampler ratio on a load endpoint                 | demo + loadgen                                                                              |
-| G-METRICS-SDK | SDK emits no metrics         | (stretch) emit basic metrics, or document as N/A | note: rouge currently exports traces+logs; metrics graphs derive from spans                 |
+| #             | Gap (current)                      | Target                                           | Likely change                                                                                                                                |
+| ------------- | ---------------------------------- | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| G-LOG         | Logs tab empty in local mode       | Logs view shows span-event logs                  | frontend: extract `log.*` events from traces; (optional) add an OTLP-logs-to-dashboard path                                                  |
+| G-WF          | No waterfall/flamegraph            | Full span-tree waterfall                         | frontend: build tree from spans (traceId/spanId/parentSpanId) + time bars                                                                    |
+| G-GRAPH       | No metrics graphs                  | Throughput/latency/error/token graphs            | frontend: aggregate store; SVG/canvas charts (no build)                                                                                      |
+| G-DETAIL      | No span drill-down                 | Attributes + events + status panel               | frontend: span detail view                                                                                                                   |
+| G-MULTI       | ✅ DONE — gateway + agent services | Gateway + agent services, propagated trace       | `gateway.py`+`agent_service.py`+`main.py`; gateway injects W3C tracecontext on the HTTP call → one trace spans both service names (verified) |
+| G-LLM         | No real LLM spans                  | Gemini via LangGraph multi-agent                 | demo: wire `multiagent.py` into the flow w/ `GEMINI_API_KEY`                                                                                 |
+| G-ERR         | No error/exception traces          | ERROR span demo                                  | demo: failing endpoint                                                                                                                       |
+| G-PII         | Redaction not demonstrated         | PII endpoint shows redaction                     | demo: endpoint with fake PII                                                                                                                 |
+| G-SAMP        | Sampling not shown                 | Sampler ratio on a load endpoint                 | demo + loadgen                                                                                                                               |
+| G-METRICS-SDK | SDK emits no metrics               | (stretch) emit basic metrics, or document as N/A | note: rouge currently exports traces+logs; metrics graphs derive from spans                                                                  |
 
 > Note on naming: the user's `.env` key is **`GEMINI_API_KEY`**. `langchain- google-genai` reads **`GOOGLE_API_KEY`**. The demo must bridge this: read
 > `GEMINI_API_KEY` and set/forward it as `GOOGLE_API_KEY` (or pass
