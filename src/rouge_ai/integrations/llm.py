@@ -7,7 +7,7 @@ def instrument_llm(config: RougeConfig) -> None:
     """
     Automatically instrument LLM providers if their libraries are installed.
     Supported: OpenAI, Anthropic, Cohere, Mistral AI, Vertex AI, AWS Bedrock,
-    Replicate, Google Generative AI, LangChain, LlamaIndex.
+    Replicate, Google Generative AI, LangChain, LlamaIndex, Haystack.
     """
     if not config.instrument_llm:
         if config.tracer_verbose:
@@ -83,6 +83,10 @@ def instrument_llm(config: RougeConfig) -> None:
     _instrument("LangChain", "opentelemetry.instrumentation.langchain",
                 "LangChainInstrumentor")
 
-    # 10. LlamaIndex
+    # 11. LlamaIndex
     _instrument("LlamaIndex", "opentelemetry.instrumentation.llamaindex",
                 "LlamaIndexInstrumentor")
+
+    # 12. Haystack (shipped in the [llm] extra)
+    _instrument("Haystack", "opentelemetry.instrumentation.haystack",
+                "HaystackInstrumentor")

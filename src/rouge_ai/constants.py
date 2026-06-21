@@ -30,4 +30,7 @@ ENV_VAR_MAPPING = {
     "ROUGE_INSTRUMENT_LLM": "instrument_llm",
     "ROUGE_LLM_PROVIDERS": "llm_providers",
     "ROUGE_LLM_BLOCK_PROVIDERS": "llm_block_providers",
+    # Dashboard security
+    "ROUGE_DASHBOARD_ALLOW_REMOTE": "dashboard_allow_remote",
+    "ROUGE_DASHBOARD_CORS_ORIGINS": "dashboard_cors_origins",
 }

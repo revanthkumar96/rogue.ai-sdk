@@ -408,6 +408,29 @@ class TestTracerInitialization(unittest.TestCase):
                                     enable_log_cloud_export=False)
         self.assertIn("0.1", provider.sampler.get_description())
 
+    def test_init_no_debug_prints(self):
+        """G1: init() must not emit raw DEBUG: prints to stdout."""
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch('rouge_ai.utils.config.Path.cwd',
+                       return_value=Path(temp_dir)):
+                buf = io.StringIO()
+                with redirect_stdout(buf):
+                    init(service_name='svc',
+                         local_mode=True,
+                         enable_span_cloud_export=False,
+                         enable_log_cloud_export=False)
+                self.assertNotIn("DEBUG:", buf.getvalue())
+
+    def test_init_raises_on_empty_config(self):
+        """G2: init() with no config raises instead of returning None."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch('rouge_ai.utils.config.Path.cwd',
+                       return_value=Path(temp_dir)):
+                with self.assertRaises(ValueError):
+                    init()
+
 
 if __name__ == '__main__':
     unittest.main()

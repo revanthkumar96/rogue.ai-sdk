@@ -13,7 +13,7 @@ def launch_dashboard(port: int = 10108, host: str = "0.0.0.0"):
     start_dashboard(port=port, host=host)
 
 
-__version__ = "0.0.10"
+__version__ = "0.0.11"
 
 
 def init(**kwargs):
