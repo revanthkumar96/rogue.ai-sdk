@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import secrets
@@ -11,6 +12,39 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("rouge-dashboard")
+
+# OTLP protobuf request types per signal (lazy-imported on first use).
+_OTLP_PROTO = {
+    "traces": ("opentelemetry.proto.collector.trace.v1.trace_service_pb2",
+               "ExportTraceServiceRequest"),
+    "logs": ("opentelemetry.proto.collector.logs.v1.logs_service_pb2",
+             "ExportLogsServiceRequest"),
+    "metrics": ("opentelemetry.proto.collector.metrics.v1.metrics_service_pb2",
+                "ExportMetricsServiceRequest"),
+}
+
+
+async def _read_otlp(request: "Request", signal: str) -> dict:
+    """Parse an OTLP/HTTP body (protobuf or JSON) to the OTLP/JSON dict shape.
+
+    The SDK's OTLP/HTTP exporter sends protobuf (``application/x-protobuf``);
+    an OpenTelemetry Collector may forward JSON. Both are normalised to the
+    OTLP/JSON structure (camelCase keys, e.g. ``resourceSpans``) that the store
+    and the dashboard frontend expect, so the dashboard works as a standalone
+    OTLP receiver with no collector in between.
+    """
+    body = await request.body()
+    content_type = request.headers.get("content-type", "")
+    if "json" in content_type:
+        return json.loads(body)
+    # OTLP/protobuf -> dict with JSON (camelCase) field names.
+    from google.protobuf.json_format import MessageToDict
+    module_path, cls_name = _OTLP_PROTO[signal]
+    module = __import__(module_path, fromlist=[cls_name])
+    message = getattr(module, cls_name)()
+    message.ParseFromString(body)
+    return MessageToDict(message)
+
 
 # In-memory storage for telemetry data
 # In a production scenario, this could be SQLite or a persistent store
@@ -107,7 +141,7 @@ def create_dashboard_router(config=None) -> APIRouter:
     @router.post("/v1/traces")
     async def collect_traces(request: Request):
         try:
-            data = await request.json()
+            data = await _read_otlp(request, "traces")
             TELEMETRY_DATA["traces"].insert(0, data)
             TELEMETRY_DATA["traces"] = TELEMETRY_DATA["traces"][:MAX_ITEMS]
             logger.info("Received traces: %d resource spans",
@@ -149,7 +183,7 @@ def create_dashboard_router(config=None) -> APIRouter:
     @router.post("/v1/logs")
     async def collect_logs(request: Request):
         try:
-            data = await request.json()
+            data = await _read_otlp(request, "logs")
             TELEMETRY_DATA["logs"].insert(0, data)
             TELEMETRY_DATA["logs"] = TELEMETRY_DATA["logs"][:MAX_ITEMS]
             logger.info(f"Received logs: {len(data.get('resourceLogs', []))} "
@@ -166,7 +200,7 @@ def create_dashboard_router(config=None) -> APIRouter:
     @router.post("/v1/metrics")
     async def collect_metrics(request: Request):
         try:
-            data = await request.json()
+            data = await _read_otlp(request, "metrics")
             TELEMETRY_DATA["metrics"].insert(0, data)
             TELEMETRY_DATA["metrics"] = TELEMETRY_DATA["metrics"][:MAX_ITEMS]
             return {"status": "ok"}

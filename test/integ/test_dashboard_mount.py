@@ -199,6 +199,31 @@ class TestDashboardMount(unittest.TestCase):
         app = get_dashboard_app(rouge_ai.tracer.get_config())
         self.assertIn(CORSMiddleware, [m.cls for m in app.user_middleware])
 
+    def test_ingests_otlp_protobuf(self):
+        """Dashboard ingests OTLP/protobuf (what the SDK exporter sends)."""
+        from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import \
+            ExportTraceServiceRequest
+        app = FastAPI()
+        _init_local()
+        mount_dashboard(app, path="/rouge")
+        client = _client(app)
+
+        req = ExportTraceServiceRequest()
+        span = req.resource_spans.add().scope_spans.add().spans.add()
+        span.name = "protobuf-span"
+        resp = client.post("/rouge/v1/traces",
+                           content=req.SerializeToString(),
+                           headers={"content-type": "application/x-protobuf"})
+        self.assertEqual(resp.status_code, 200)
+
+        data = client.get("/rouge/api/telemetry").json()
+        names = [
+            s.get("name") for p in data["traces"]
+            for rs in p.get("resourceSpans", [])
+            for ss in rs.get("scopeSpans", []) for s in ss.get("spans", [])
+        ]
+        self.assertIn("protobuf-span", names)
+
 
 if __name__ == "__main__":
     unittest.main()
